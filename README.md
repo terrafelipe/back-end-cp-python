@@ -13,7 +13,7 @@ Projeto acadêmico desenvolvido para a FIAP — Tecnologia em Inteligência Arti
 | Nome | RM | GitHub |
 |---|---|---|
 | Felipe Terra | RM______ | [@terrafelipe](https://github.com/terrafelipe) |
-| Gustavo Pugas Linczuk | RM573087 | [@gulinczuk](https://gus.linczuk@gmail.com) |
+| Gustavo Pugas Linczuk | RM573087 | [@gulinczuk](https://github.com/gulinczuk) |
 | _Nome do integrante_ | RM______ | [@usuario](https://github.com/usuario) |
 | _Nome do integrante_ | RM______ | [@usuario](https://github.com/usuario) |
 
