@@ -37,7 +37,7 @@ class Config:
     """Configuração única, parametrizada por ambiente."""
 
     # --- Flask ---------------------------------------------------------
-    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-nao-usar-em-producao")
+    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-apenas-local-nao-usar-em-producao")
     DEBUG = _env_bool("FLASK_DEBUG", default=True)
 
     # --- Banco de dados ------------------------------------------------

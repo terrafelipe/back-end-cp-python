@@ -78,8 +78,12 @@ def _registrar_namespaces(app: Flask) -> None:
     Os namespaces são adicionados antes do `init_app` para que apareçam
     corretamente no `/swagger`.
     """
+    from app.resources.auth import ns as auth_ns
     from app.resources.health import ns as health_ns
+    from app.resources.usuarios import ns as usuarios_ns
 
     api.add_namespace(health_ns, path="/health")
+    api.add_namespace(auth_ns, path="/auth")
+    api.add_namespace(usuarios_ns, path="/usuarios")
 
     api.init_app(app)

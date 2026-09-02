@@ -24,6 +24,8 @@ e o traceback vai para o log do servidor.
 import logging
 
 from flask import Flask, jsonify
+from flask_jwt_extended.exceptions import JWTExtendedException
+from jwt import PyJWTError
 from werkzeug.exceptions import HTTPException
 
 from app.extensions import api, jwt
@@ -51,6 +53,15 @@ MENSAGENS_HTTP = {
     405: "Método não permitido para este recurso.",
     422: "Regra de negócio violada.",
     500: "Erro interno no servidor.",
+}
+
+
+# Mensagem por tipo de falha de token. O nome da classe é usado como chave
+# para não importar sete exceções só para comparar.
+MENSAGENS_JWT = {
+    "NoAuthorizationError": "Token de acesso ausente. Faça login em /auth/login.",
+    "ExpiredSignatureError": "Token de acesso expirado. Faça login novamente.",
+    "RevokedTokenError": "Token de acesso revogado.",
 }
 
 
@@ -206,6 +217,20 @@ def registrar_tratadores(app: Flask) -> None:
     @api.errorhandler(ErroAPI)
     def _erro_de_dominio(e: ErroAPI):
         return e.payload(), e.status_code
+
+    @api.errorhandler(JWTExtendedException)
+    @api.errorhandler(PyJWTError)
+    def _erro_de_token(e: Exception):
+        """Traduz falha de token dentro de um resource.
+
+        Os loaders do flask-jwt-extended registrados abaixo só valem para
+        exceções que chegam ao Flask. Dentro de um resource, o flask-restx
+        captura antes, e sem este tratador a falta de token viraria 500.
+        """
+        mensagem = MENSAGENS_JWT.get(
+            type(e).__name__, "Token de acesso inválido."
+        )
+        return montar_erro("HTTP-401", mensagem), 401
 
     @api.errorhandler(HTTPException)
     def _erro_http(e: HTTPException):

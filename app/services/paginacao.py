@@ -1,0 +1,33 @@
+"""Envelope único de listagem paginada.
+
+Todo recurso paginado da API responde neste formato. Centralizar aqui é o
+que garante que produtos, movimentações e usuários não divirjam.
+"""
+
+from app.errors import RequisicaoInvalida
+
+POR_PAGINA_PADRAO = 20
+POR_PAGINA_MAXIMO = 100
+
+
+def paginar(query, pagina: int = 1, por_pagina: int = POR_PAGINA_PADRAO) -> dict:
+    """Aplica a paginação e devolve o envelope descrito no README."""
+    if pagina < 1:
+        raise RequisicaoInvalida(
+            "A página deve ser maior ou igual a 1.", campo="pagina"
+        )
+    if not 1 <= por_pagina <= POR_PAGINA_MAXIMO:
+        raise RequisicaoInvalida(
+            f"O tamanho da página deve estar entre 1 e {POR_PAGINA_MAXIMO}.",
+            campo="por_pagina",
+        )
+
+    # error_out=False: página além do fim devolve lista vazia, não 404.
+    resultado = query.paginate(page=pagina, per_page=por_pagina, error_out=False)
+    return {
+        "itens": resultado.items,
+        "pagina": resultado.page,
+        "por_pagina": resultado.per_page,
+        "total": resultado.total,
+        "total_paginas": resultado.pages,
+    }
