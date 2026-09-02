@@ -5,3 +5,8 @@ Flask-Migrate==4.1.0
 flask-jwt-extended==4.7.4
 bcrypt==5.0.0
 python-dotenv==1.2.2
+flask-cors==6.0.5
+
+# Driver do PostgreSQL. Só é usado se DATABASE_URL apontar para um Postgres;
+# o caminho SQLite não o carrega. Wheel pré-compilado, não exige compilador.
+psycopg[binary]==3.3.4

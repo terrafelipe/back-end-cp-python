@@ -53,12 +53,26 @@ class Config:
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY") or SECRET_KEY
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=_env_int("JWT_EXPIRES_HOURS", 8))
 
+    # --- Migrations ----------------------------------------------------
+    # Aplica as migrations pendentes ao subir a aplicação e ao rodar o seed.
+    # Existe para que um clone limpo funcione sem nenhum comando extra.
+    AUTO_MIGRATE = _env_bool("AUTO_MIGRATE", default=True)
+
     # --- API / Swagger -------------------------------------------------
     API_TITLE = "Gestor de Estoque API"
     API_VERSION = "1.0"
     SWAGGER_URL = os.getenv("SWAGGER_URL", "/swagger")
     # Esconde o header X-Fields do Swagger; deixa a documentação mais limpa.
     RESTX_MASK_SWAGGER = False
+    # O flask-restx injetaria a chave "message" nas respostas de erro,
+    # competindo com o envelope definido em errors.py.
+    ERROR_INCLUDE_MESSAGE = False
+    # Sem isto, acento sai escapado ("não") nas respostas do flask-restx.
+    RESTX_JSON = {"ensure_ascii": False}
+    # Com DEBUG ligado, o Flask devolveria a página de debug (com stack trace)
+    # em vez de chamar o tratador de erro. Desligar garante que nenhum
+    # traceback vaze para o cliente; o traceback continua indo para o log.
+    PROPAGATE_EXCEPTIONS = False
 
     # --- Servidor local ------------------------------------------------
     HOST = os.getenv("HOST", "127.0.0.1")

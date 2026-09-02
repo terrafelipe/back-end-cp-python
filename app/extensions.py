@@ -10,10 +10,21 @@ from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from flask_restx import Api
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import event
+from sqlalchemy import MetaData, event
 from sqlalchemy.engine import Engine
 
-db = SQLAlchemy()
+# Nomes previsíveis para índices e constraints. O SQLite não sabe alterar
+# constraint anônima: sem convenção, uma migration futura que mexa em coluna
+# existente falha no `batch_alter_table`.
+convencao_de_nomes = {
+    "ix": "ix_%(table_name)s_%(column_0_N_name)s",
+    "uq": "uq_%(table_name)s_%(column_0_N_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s",
+}
+
+db = SQLAlchemy(metadata=MetaData(naming_convention=convencao_de_nomes))
 migrate = Migrate()
 jwt = JWTManager()
 

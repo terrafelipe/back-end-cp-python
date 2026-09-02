@@ -15,7 +15,11 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 
-# Editores / SO
+# Editores / ferramentas
+.vscode/
 .idea/
+.claude/
+
+# SO
 .DS_Store
 Thumbs.db
