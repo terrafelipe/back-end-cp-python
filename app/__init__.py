@@ -29,7 +29,7 @@ def create_app(config_object: type[Config] = Config) -> Flask:
 def aplicar_migrations(app: Flask) -> None:
     """Aplica as migrations pendentes do Alembic.
 
-    Chamado por `run.py` e por `seed.py`, para que um clone limpo — sem banco
+    Chamado por `app.py` e por `seed.py`, para que um clone limpo — sem banco
     e sem `.env` — funcione sem nenhum comando manual. Rodar com o banco já
     atualizado é inócuo: o Alembic detecta que está na revisão mais recente.
 
@@ -78,9 +78,9 @@ def _registrar_namespaces(app: Flask) -> None:
     Os namespaces são adicionados antes do `init_app` para que apareçam
     corretamente no `/swagger`.
     """
-    from app.resources.auth import ns as auth_ns
-    from app.resources.health import ns as health_ns
-    from app.resources.usuarios import ns as usuarios_ns
+    from app.controllers.auth import ns as auth_ns
+    from app.controllers.health import ns as health_ns
+    from app.controllers.usuarios import ns as usuarios_ns
 
     api.add_namespace(health_ns, path="/health")
     api.add_namespace(auth_ns, path="/auth")

@@ -63,7 +63,7 @@ flask db upgrade
 python seed.py
 
 # 7. Subir a aplicação
-python run.py
+python app.py
 ```
 
 A API sobe em `http://localhost:5000`.
@@ -98,16 +98,24 @@ app/
 ├── config.py          # configuração por ambiente
 ├── extensions.py      # db, migrate, jwt
 ├── errors.py          # tratamento centralizado de erros
+├── security.py        # hash de senha, leitura do token e controle de papel
 ├── models/            # entidades SQLAlchemy
 ├── schemas/           # modelos de entrada e saída do flask-restx
 ├── services/          # regras de negócio
-└── resources/         # rotas HTTP
+└── controllers/       # camada HTTP
 migrations/            # histórico de migrations
 seed.py                # dados de demonstração
-run.py                 # ponto de entrada
+app.py                 # ponto de entrada
 ```
 
-A arquitetura separa responsabilidades em três camadas: os *resources* apenas recebem a requisição e devolvem a resposta, os *services* concentram toda a regra de negócio, e os *models* cuidam da persistência. Nenhuma validação de domínio ocorre na camada HTTP.
+A arquitetura separa responsabilidades em três camadas: os *controllers* apenas recebem a requisição e devolvem a resposta, os *services* concentram toda a regra de negócio, e os *models* cuidam da persistência. Nenhuma validação de domínio ocorre na camada HTTP — se houvesse verificação de saldo dentro de um controller, estaria no lugar errado.
+
+Duas pastas comuns em outras stacks não existem aqui, por decisão:
+
+| Pasta | Onde ficou | Motivo |
+|---|---|---|
+| `routers/` | dentro de `controllers/` | No flask-restx a rota é declarada na própria classe (`@ns.route`). Separar exigiria abrir mão do `Resource` e, com ele, da geração automática do Swagger. |
+| `middlewares/` | `errors.py` e `security.py` | Em Flask o papel de middleware é cumprido por *error handlers* e *decorators*, que já estão isolados nesses dois módulos. |
 
 ---
 

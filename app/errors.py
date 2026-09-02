@@ -211,7 +211,7 @@ def registrar_tratadores(app: Flask) -> None:
     inexistente.
     """
 
-    # --- Nível flask-restx (dentro dos resources) -------------------------
+    # --- Nível flask-restx (dentro dos controllers) -------------------------
     # A ordem importa: o flask-restx percorre os tratadores registrados e
     # usa o primeiro cujo isinstance() casar. Do mais específico ao geral.
     @api.errorhandler(ErroAPI)
@@ -249,7 +249,7 @@ def registrar_tratadores(app: Flask) -> None:
         logger.exception("Erro não tratado: %s", e)
         return montar_erro("HTTP-500", "Erro interno no servidor."), 500
 
-    # --- Nível Flask (fora dos resources) ---------------------------------
+    # --- Nível Flask (fora dos controllers) ---------------------------------
     @app.errorhandler(ErroAPI)
     def _erro_de_dominio_fora(e: ErroAPI):
         return jsonify(e.payload()), e.status_code

@@ -11,7 +11,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Raiz do projeto (pasta que contém `app/`, `run.py`, `estoque.db`).
+# Raiz do projeto (pasta que contém `app/`, `app.py`, `estoque.db`).
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Carrega o `.env` da raiz, se existir. Variáveis já presentes no ambiente

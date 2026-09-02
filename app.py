@@ -1,7 +1,7 @@
 """Ponto de entrada da aplicação.
 
 Uso:
-    python run.py
+    python app.py
 
 Aplica as migrations pendentes antes de subir, para que um clone limpo
 funcione sem comando extra. Ver AUTO_MIGRATE no .env.example.

@@ -1,6 +1,6 @@
 """Instâncias das extensões, criadas sem app (padrão application factory).
 
-Ficam aqui para que models, services e resources possam importá-las sem
+Ficam aqui para que models, services e controllers possam importá-las sem
 criar import circular com o pacote `app`.
 """
 
