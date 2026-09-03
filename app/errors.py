@@ -59,7 +59,10 @@ MENSAGENS_HTTP = {
 # Mensagem por tipo de falha de token. O nome da classe é usado como chave
 # para não importar sete exceções só para comparar.
 MENSAGENS_JWT = {
-    "NoAuthorizationError": "Token de acesso ausente. Faça login em /auth/login.",
+    "NoAuthorizationError": (
+        "Token de acesso ausente ou mal formatado. Faça login em "
+        "/auth/login e envie o cabeçalho como: Authorization: Bearer <token>."
+    ),
     "ExpiredSignatureError": "Token de acesso expirado. Faça login novamente.",
     "RevokedTokenError": "Token de acesso revogado.",
 }
