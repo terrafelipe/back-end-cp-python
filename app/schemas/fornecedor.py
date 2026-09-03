@@ -20,20 +20,22 @@ fornecedor_saida = api.model(
 fornecedor_entrada = api.model(
     "FornecedorEntrada",
     {
-        "nome": fields.String(required=True, min_length=2, max_length=120),
-        "cnpj": fields.String(max_length=18),
-        "email": fields.String(max_length=180),
-        "telefone": fields.String(max_length=20),
+        "nome": fields.String(
+            required=True, min_length=2, max_length=120, example="Bebidas Norte"
+        ),
+        "cnpj": fields.String(max_length=18, example="22.333.444/0001-55"),
+        "email": fields.String(max_length=180, example="contato@bebidasnorte.com.br"),
+        "telefone": fields.String(max_length=20, example="(11) 97777-6655"),
     },
 )
 
 fornecedor_atualizacao = api.model(
     "FornecedorAtualizacao",
     {
-        "nome": fields.String(min_length=2, max_length=120),
-        "cnpj": fields.String(max_length=18),
-        "email": fields.String(max_length=180),
-        "telefone": fields.String(max_length=20),
+        "nome": fields.String(min_length=2, max_length=120, example="Bebidas Norte"),
+        "cnpj": fields.String(max_length=18, example="22.333.444/0001-55"),
+        "email": fields.String(max_length=180, example="contato@bebidasnorte.com.br"),
+        "telefone": fields.String(max_length=20, example="(11) 97777-6655"),
     },
 )
 

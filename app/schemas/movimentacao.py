@@ -28,7 +28,7 @@ movimentacao_saida = api.model(
 movimentacao_entrada = api.model(
     "MovimentacaoEntrada",
     {
-        "produto_id": fields.Integer(required=True),
+        "produto_id": fields.Integer(required=True, example=1),
         "tipo": fields.String(
             required=True,
             enum=TIPOS,
@@ -39,10 +39,15 @@ movimentacao_entrada = api.model(
             ),
         ),
         "quantidade": fields.Integer(
-            required=True, min=1, description="Sempre positiva; o sentido vem do tipo (RN-03)"
+            required=True,
+            min=1,
+            example=50,
+            description="Sempre positiva; o sentido vem do tipo (RN-03)",
         ),
-        "custo_unitario": fields.Float(min=0, description="Usado apenas em ENTRADA"),
-        "motivo": fields.String(max_length=255),
+        "custo_unitario": fields.Float(
+            min=0, example=3.20, description="Usado apenas em ENTRADA"
+        ),
+        "motivo": fields.String(max_length=255, example="Compra da nota 1234"),
     },
 )
 

@@ -28,12 +28,19 @@ usuario_saida = api.model(
 usuario_entrada = api.model(
     "UsuarioEntrada",
     {
-        "nome": fields.String(required=True, min_length=2, max_length=120),
-        "email": fields.String(required=True, max_length=180),
-        "senha": fields.String(required=True, min_length=6, max_length=72),
+        "nome": fields.String(
+            required=True, min_length=2, max_length=120, example="Carla Nunes"
+        ),
+        "email": fields.String(
+            required=True, max_length=180, example="carla@demo.com"
+        ),
+        "senha": fields.String(
+            required=True, min_length=6, max_length=72, example="senha123"
+        ),
         "role": fields.String(
             required=True,
             enum=PAPEIS,
+            example="OPERADOR",
             description="ADMIN cadastra usuários e fornecedores; "
             "OPERADOR registra movimentações e consulta.",
         ),
@@ -44,10 +51,10 @@ usuario_entrada = api.model(
 usuario_atualizacao = api.model(
     "UsuarioAtualizacao",
     {
-        "nome": fields.String(min_length=2, max_length=120),
-        "email": fields.String(max_length=180),
-        "senha": fields.String(min_length=6, max_length=72),
-        "role": fields.String(enum=PAPEIS),
+        "nome": fields.String(min_length=2, max_length=120, example="Carla Nunes"),
+        "email": fields.String(max_length=180, example="carla@demo.com"),
+        "senha": fields.String(min_length=6, max_length=72, example="senha123"),
+        "role": fields.String(enum=PAPEIS, example="OPERADOR"),
     },
 )
 

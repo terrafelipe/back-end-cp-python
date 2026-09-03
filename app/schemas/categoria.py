@@ -16,7 +16,7 @@ categoria_saida = api.model(
 
 categoria_entrada = api.model(
     "CategoriaEntrada",
-    {"nome": fields.String(required=True, min_length=2, max_length=80, example="Bebidas")},
+    {"nome": fields.String(required=True, min_length=2, max_length=80, example="Congelados")},
 )
 
 categoria_paginada = modelo_paginado("CategoriaPaginada", categoria_saida)

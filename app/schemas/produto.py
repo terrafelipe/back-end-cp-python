@@ -38,30 +38,36 @@ produto_saida = api.model(
 produto_entrada = api.model(
     "ProdutoEntrada",
     {
-        "sku": fields.String(required=True, min_length=1, max_length=40),
-        "nome": fields.String(required=True, min_length=2, max_length=160),
-        "descricao": fields.String(),
-        "categoria_id": fields.Integer(required=True),
-        "fornecedor_id": fields.Integer(),
-        "preco_venda": fields.Float(
-            min=0, description="Somente ADMIN pode definir (RN-09)"
+        "sku": fields.String(
+            required=True, min_length=1, max_length=40, example="BEB-TONICA-350"
         ),
-        "estoque_minimo": fields.Integer(min=0, default=0),
-        "unidade": fields.String(max_length=10, default="UN"),
+        "nome": fields.String(
+            required=True, min_length=2, max_length=160, example="Água Tônica 350ml"
+        ),
+        "descricao": fields.String(example="Lata 350ml, caixa com 12"),
+        "categoria_id": fields.Integer(required=True, example=1),
+        "fornecedor_id": fields.Integer(example=1),
+        "preco_venda": fields.Float(
+            min=0, example=6.90, description="Somente ADMIN pode definir (RN-09)"
+        ),
+        "estoque_minimo": fields.Integer(min=0, default=0, example=12),
+        "unidade": fields.String(max_length=10, default="UN", example="UN"),
     },
 )
 
 produto_atualizacao = api.model(
     "ProdutoAtualizacao",
     {
-        "sku": fields.String(min_length=1, max_length=40),
-        "nome": fields.String(min_length=2, max_length=160),
-        "descricao": fields.String(),
-        "categoria_id": fields.Integer(),
-        "fornecedor_id": fields.Integer(),
-        "preco_venda": fields.Float(min=0),
-        "estoque_minimo": fields.Integer(min=0),
-        "unidade": fields.String(max_length=10),
+        "sku": fields.String(min_length=1, max_length=40, example="BEB-TONICA-350"),
+        "nome": fields.String(
+            min_length=2, max_length=160, example="Água Tônica 350ml"
+        ),
+        "descricao": fields.String(example="Lata 350ml, caixa com 12"),
+        "categoria_id": fields.Integer(example=1),
+        "fornecedor_id": fields.Integer(example=1),
+        "preco_venda": fields.Float(min=0, example=6.90),
+        "estoque_minimo": fields.Integer(min=0, example=12),
+        "unidade": fields.String(max_length=10, example="UN"),
     },
 )
 
