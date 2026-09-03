@@ -6,7 +6,7 @@ from pathlib import Path
 from flask import Flask
 
 from app.config import Config
-from app.extensions import api, db, jwt, migrate
+from app.extensions import api, cors, db, jwt, migrate
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +60,10 @@ def _registrar_extensoes(app: Flask) -> None:
     # modo batch é transparente, então a mesma migration serve para os dois.
     migrate.init_app(app, db, render_as_batch=True)
     jwt.init_app(app)
+    # Permite que o frontend da próxima entrega, servido em outra porta,
+    # consuma a API sem esbarrar na política de mesma origem do navegador.
+    origens = [o.strip() for o in app.config["CORS_ORIGINS"].split(",") if o.strip()]
+    cors.init_app(app, resources={r"/*": {"origins": origens}})
 
     # Importar os models registra as tabelas no metadata do SQLAlchemy.
     # Sem isso o autogenerate do Alembic gera uma migration vazia.

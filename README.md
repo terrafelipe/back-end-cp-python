@@ -23,7 +23,7 @@ Projeto acadêmico desenvolvido para a FIAP — Tecnologia em Inteligência Arti
 
 | Camada | Tecnologia |
 |---|---|
-| Linguagem | Python 3.13 |
+| Linguagem | Python 3.12 ou superior |
 | Framework web | Flask |
 | API e documentação | flask-restx (Swagger/OpenAPI) |
 | ORM | SQLAlchemy |
@@ -38,7 +38,7 @@ O SQLite foi escolhido por eliminar dependência de servidor externo, mantendo m
 
 ## Como rodar
 
-Pré-requisito: Python 3.11 ou superior.
+Pré-requisito: **Python 3.12 ou superior**. Nenhum outro serviço é necessário — o banco é um arquivo SQLite criado na primeira execução.
 
 ```bash
 # 1. Clonar o repositório
@@ -46,38 +46,53 @@ git clone https://github.com/<usuario>/<repositorio>.git
 cd <repositorio>
 
 # 2. Criar e ativar o ambiente virtual
-python -m venv venv
-source venv/bin/activate        # Linux / macOS
-venv\Scripts\activate           # Windows
+python -m venv .venv
+source .venv/bin/activate        # Linux / macOS
+.venv\Scripts\activate          # Windows
 
 # 3. Instalar as dependências
 pip install -r requirements.txt
 
-# 4. Configurar as variáveis de ambiente
-cp .env.example .env
-
-# 5. Criar o banco
-flask db upgrade
-
-# 6. Popular com dados de demonstração (opcional)
+# 4. Popular com dados de demonstração (opcional, mas recomendado)
 python seed.py
 
-# 7. Subir a aplicação
+# 5. Subir a aplicação
 python app.py
 ```
+
+Não é preciso criar `.env` nem rodar `flask db upgrade`: todas as variáveis
+têm padrão de desenvolvimento e as migrations pendentes são aplicadas
+automaticamente ao subir a aplicação ou ao rodar o seed. Copie o
+`.env.example` para `.env` apenas se quiser mudar algum valor — por exemplo,
+apontar `DATABASE_URL` para um PostgreSQL.
 
 A API sobe em `http://localhost:5000`.
 A documentação interativa fica em **`http://localhost:5000/swagger`**.
 
 ### Variáveis de ambiente
 
+Todas são opcionais: o projeto roda sem `.env`.
+
 | Variável | Descrição | Padrão |
 |---|---|---|
-| `FLASK_ENV` | Ambiente de execução | `development` |
-| `SECRET_KEY` | Chave da aplicação | — |
-| `JWT_SECRET_KEY` | Chave de assinatura dos tokens | — |
-| `DATABASE_URL` | String de conexão | `sqlite:///estoque.db` |
-| `JWT_ACCESS_TOKEN_EXPIRES` | Validade do token, em minutos | `60` |
+| `DATABASE_URL` | String de conexão. Trocar de banco é só trocar esta linha. | `sqlite:///estoque.db` na raiz |
+| `SECRET_KEY` | Chave da aplicação | chave de desenvolvimento |
+| `JWT_SECRET_KEY` | Chave de assinatura dos tokens | o valor de `SECRET_KEY` |
+| `JWT_EXPIRES_HOURS` | Validade do token, em horas | `8` |
+| `AUTO_MIGRATE` | Aplica as migrations pendentes ao subir | `1` |
+| `FLASK_DEBUG` | Recarga automática e log detalhado | `1` |
+| `HOST` | Endereço de escuta | `127.0.0.1` |
+| `PORT` | Porta | `5000` |
+| `SWAGGER_URL` | Caminho da documentação | `/swagger` |
+| `SQLALCHEMY_ECHO` | Imprime o SQL gerado, útil para depurar | `0` |
+| `CORS_ORIGINS` | Origens aceitas, separadas por vírgula | `*` |
+
+Para usar PostgreSQL, basta uma linha no `.env` — nenhum arquivo de modelo,
+serviço ou migration muda:
+
+```
+DATABASE_URL=postgresql+psycopg://usuario:senha@host:5432/estoque
+```
 
 ### Usuários de demonstração
 
@@ -85,8 +100,8 @@ Criados pelo `seed.py`:
 
 | Email | Senha | Perfil |
 |---|---|---|
-| `admin@demo.com` | `admin123` | admin |
-| `operador@demo.com` | `operador123` | operador |
+| `admin@demo.com` | `admin123` | `ADMIN` |
+| `operador@demo.com` | `operador123` | `OPERADOR` |
 
 ---
 
@@ -194,6 +209,8 @@ erDiagram
 
 **Movimentação como registro imutável.** Movimentações formam a trilha de auditoria do estoque; alterá-las destruiria a capacidade de investigar divergências de inventário.
 
+**`AJUSTE` é contagem, não soma.** Uma movimentação do tipo `AJUSTE` **define** o saldo pelo valor informado, em vez de somar a ele. A leitura decorre do próprio modelo: como a quantidade é sempre positiva (RN-03) e a correção precisa poder ir nos dois sentidos (RN-04), um ajuste de sinal fixo não conseguiria baixar o saldo. Na prática é a contagem de inventário — o operador informa o que contou na prateleira, e as movimentações posteriores voltam a somar e subtrair normalmente.
+
 ---
 
 ## Regras de negócio
@@ -208,6 +225,12 @@ erDiagram
 | **RN-06** | Produto com saldo abaixo do estoque mínimo é sinalizado como em ruptura | Antecipa a reposição antes da falta |
 | **RN-07** | O custo médio ponderado é recalculado a cada entrada | Base para valorização do estoque e apuração de margem |
 | **RN-08** | O usuário acessa apenas dados da própria empresa, determinados pelo token | Isolamento entre clientes; validado no servidor, nunca por parâmetro do cliente |
+| **RN-09** | Apenas `ADMIN` cria ou altera usuário, fornecedor e preço de venda | Cadastro e política comercial são decisões de gestão, não de operação |
+| **RN-10** | O `OPERADOR` registra movimentações e consulta, mas não exclui produto | Quem opera o estoque não decide o que sai do catálogo |
+
+Duas regras adicionais protegem o acesso da empresa, ambas respondendo `422`:
+um usuário não pode excluir a si mesmo, e a empresa precisa manter ao menos
+um `ADMIN` ativo.
 
 Violações de regra de negócio retornam **HTTP 422** com o código correspondente na resposta.
 
@@ -222,6 +245,18 @@ Violações de regra de negócio retornam **HTTP 422** com o código corresponde
 | `POST` | `/auth/register` | Cadastra empresa e usuário administrador |
 | `POST` | `/auth/login` | Autentica e retorna o token JWT |
 | `GET` | `/auth/me` | Dados do usuário autenticado |
+
+### Usuários
+
+Todas exigem perfil `ADMIN`, exceto a consulta individual.
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/usuarios` | Lista paginada; `incluir_inativos` traz os desativados |
+| `POST` | `/usuarios` | Cadastra usuário na própria empresa |
+| `GET` | `/usuarios/{id}` | Detalha um usuário |
+| `PUT` | `/usuarios/{id}` | Atualiza usuário; aceita alteração parcial |
+| `DELETE` | `/usuarios/{id}` | Desativa o usuário |
 
 ### Produtos
 
@@ -267,6 +302,7 @@ Todos os endpoints, exceto `/auth/register` e `/auth/login`, exigem o cabeçalho
 | `401` | Token ausente ou inválido |
 | `403` | Sem permissão para o recurso |
 | `404` | Recurso inexistente |
+| `405` | Método não permitido — usado pela RN-04 em movimentações |
 | `422` | Regra de negócio violada |
 
 **Formato de erro**, idêntico em toda a API:
@@ -297,6 +333,45 @@ Os campos do JSON seguem `snake_case`. Senhas nunca aparecem em respostas — os
 
 ---
 
+## Roteiro de validação
+
+Onze passos para conferir a API inteira pelo `/swagger`. Rode `python seed.py`
+antes, e faça login como `admin@demo.com` / `admin123`.
+
+1. **Subir e abrir.** `python app.py` e acesse `http://localhost:5000/swagger`.
+   Todas as rotas devem aparecer agrupadas por recurso.
+2. **Autenticar.** `POST /auth/login` com o usuário demo. Copie o
+   `access_token` da resposta, clique em **Authorize** e informe
+   `Bearer <token>`.
+3. **Confirmar a identidade.** `GET /auth/me` devolve o usuário do token, sem
+   nenhum campo de senha.
+4. **Listar produtos.** `GET /produtos` devolve o envelope paginado, e cada
+   item traz `saldo` e `em_ruptura` — nenhum dos dois é coluna do banco.
+5. **Ver os alertas.** `GET /estoque/alertas` lista apenas os produtos abaixo
+   do estoque mínimo (RN-06). Com os dados do seed, são três.
+6. **Registrar uma entrada.** `POST /movimentacoes` com `tipo: ENTRADA`,
+   `quantidade: 100` e `custo_unitario`. Consulte o produto de novo: o saldo
+   subiu e o `preco_custo` foi recalculado pela média ponderada (RN-07).
+7. **Tentar uma saída impossível.** Mesma rota com `tipo: SAIDA` e uma
+   quantidade maior que o saldo. A resposta é `422` com o código `RN-02` e a
+   quantidade disponível na mensagem.
+8. **Tentar alterar o histórico.** `PUT` ou `DELETE` em
+   `/movimentacoes/{id}` responde `405` com o código `RN-04`, indicando que a
+   correção se faz com um `AJUSTE`.
+9. **Testar o papel.** Refaça o login como `operador@demo.com` /
+   `operador123`, troque o token no **Authorize** e tente
+   `POST /fornecedores` ou `DELETE /produtos/{id}`. Ambos respondem `403`,
+   com `RN-09` e `RN-10` respectivamente.
+10. **Testar o isolamento.** Crie outra empresa com `POST /auth/register` e,
+    com o token dela, tente `GET /produtos/{id}` de um produto da empresa
+    demo. A resposta é `404` — nunca `403`, que confirmaria a existência do
+    registro (RN-08).
+11. **Conferir o padrão de erro.** Qualquer falha acima devolve o mesmo
+    envelope: `erro.codigo`, `erro.mensagem` e `erro.campo`. Nenhum stack
+    trace chega ao cliente.
+
+---
+
 ## Escopo
 
 Esta etapa entrega o backend, a documentação e a persistência. Estão previstos para as próximas: interface web e dashboard, aplicação de LLM, testes automatizados, containerização e deploy.
@@ -313,4 +388,5 @@ O acompanhamento das sprints é feito em [inserir link do Trello ou Notion].
 
 ## Licença
 
-Uso acadêmico.
+Distribuído sob a licença MIT — ver [LICENSE](LICENSE). Projeto de uso
+acadêmico.

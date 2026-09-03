@@ -6,6 +6,7 @@ criar import circular com o pacote `app`.
 
 import sqlite3
 
+from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from flask_restx import Api
@@ -27,6 +28,7 @@ convencao_de_nomes = {
 db = SQLAlchemy(metadata=MetaData(naming_convention=convencao_de_nomes))
 migrate = Migrate()
 jwt = JWTManager()
+cors = CORS()
 
 # Configuração do botão "Authorize" do Swagger, para testar rota protegida
 # direto pela documentação.

@@ -74,6 +74,12 @@ class Config:
     # traceback vaze para o cliente; o traceback continua indo para o log.
     PROPAGATE_EXCEPTIONS = False
 
+    # --- CORS ----------------------------------------------------------
+    # Lista separada por vírgula. O padrão libera qualquer origem, o que
+    # serve para o frontend da próxima entrega rodar em outra porta sem
+    # configuração. Em produção, restrinja aos domínios reais.
+    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*")
+
     # --- Servidor local ------------------------------------------------
     HOST = os.getenv("HOST", "127.0.0.1")
     PORT = _env_int("PORT", 5000)
