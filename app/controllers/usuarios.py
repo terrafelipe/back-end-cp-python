@@ -3,25 +3,17 @@
 from flask import request
 from flask_restx import Namespace, Resource
 
+from app.controllers import argumento_booleano, parser_paginacao
 from app.schemas.comum import erro
 from app.schemas.usuario import usuario_atualizacao, usuario_entrada, usuario_paginado, usuario_saida
 from app.security import somente_admin, usuario_atual
 from app.services import usuario_service
-from app.services.paginacao import POR_PAGINA_PADRAO
 
 ns = Namespace("usuarios", description="Gestão de usuários da empresa (RN-09)")
 
-filtros = ns.parser()
-filtros.add_argument("pagina", type=int, default=1, location="args")
-filtros.add_argument(
-    "por_pagina", type=int, default=POR_PAGINA_PADRAO, location="args"
-)
-filtros.add_argument(
-    "incluir_inativos",
-    type=bool,
-    default=False,
-    location="args",
-    help="Inclui na listagem os usuários já desativados",
+filtros = parser_paginacao()
+argumento_booleano(
+    filtros, "incluir_inativos", "Inclui na listagem os usuários já desativados"
 )
 
 

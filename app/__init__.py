@@ -79,11 +79,21 @@ def _registrar_namespaces(app: Flask) -> None:
     corretamente no `/swagger`.
     """
     from app.controllers.auth import ns as auth_ns
+    from app.controllers.categorias import ns as categorias_ns
+    from app.controllers.estoque import ns as estoque_ns
+    from app.controllers.fornecedores import ns as fornecedores_ns
     from app.controllers.health import ns as health_ns
+    from app.controllers.movimentacoes import ns as movimentacoes_ns
+    from app.controllers.produtos import ns as produtos_ns
     from app.controllers.usuarios import ns as usuarios_ns
 
     api.add_namespace(health_ns, path="/health")
     api.add_namespace(auth_ns, path="/auth")
     api.add_namespace(usuarios_ns, path="/usuarios")
+    api.add_namespace(categorias_ns, path="/categorias")
+    api.add_namespace(fornecedores_ns, path="/fornecedores")
+    api.add_namespace(produtos_ns, path="/produtos")
+    api.add_namespace(movimentacoes_ns, path="/movimentacoes")
+    api.add_namespace(estoque_ns, path="/estoque")
 
     api.init_app(app)
