@@ -160,7 +160,9 @@ erDiagram
         string email UK
         string senha_hash
         string role
+        bool ativo
         int empresa_id FK
+        datetime criado_em
     }
     CATEGORIA {
         int id PK
@@ -188,6 +190,7 @@ erDiagram
         string unidade
         bool ativo
         int empresa_id FK
+        datetime criado_em
     }
     MOVIMENTACAO {
         int id PK
@@ -208,6 +211,8 @@ erDiagram
 **Multi-tenant desde o início.** Toda entidade de domínio carrega `empresa_id`. Isolar dados por empresa depois que o sistema já tem uso é retrabalho considerável, e essa coluna também sustenta o modelo de planos previsto para etapas seguintes.
 
 **Movimentação como registro imutável.** Movimentações formam a trilha de auditoria do estoque; alterá-las destruiria a capacidade de investigar divergências de inventário.
+
+**Desativação em vez de exclusão, também para usuário.** `usuario` tem a coluna `ativo` pelo mesmo motivo que `produto`: quem já registrou uma movimentação não pode ser apagado sem quebrar a trilha de auditoria — a chave estrangeira recusa. Sem essa coluna, o `DELETE /usuarios/{id}` só funcionaria para quem nunca operou o estoque, justamente o caso que não interessa. É também o que torna verificável a regra de manter ao menos um `ADMIN` **ativo**.
 
 **`AJUSTE` é contagem, não soma.** Uma movimentação do tipo `AJUSTE` **define** o saldo pelo valor informado, em vez de somar a ele. A leitura decorre do próprio modelo: como a quantidade é sempre positiva (RN-03) e a correção precisa poder ir nos dois sentidos (RN-04), um ajuste de sinal fixo não conseguiria baixar o saldo. Na prática é a contagem de inventário — o operador informa o que contou na prateleira, e as movimentações posteriores voltam a somar e subtrair normalmente.
 
