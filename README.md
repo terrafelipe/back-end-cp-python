@@ -12,10 +12,11 @@ Projeto acadêmico desenvolvido para a FIAP — Tecnologia em Inteligência Arti
 
 | Nome | RM | GitHub |
 |---|---|---|
-| Felipe Terra | RM______ | [@terrafelipe](https://github.com/terrafelipe) |
+| Felipe Terra | RM569324 | [@terrafelipe](https://github.com/terrafelipe) |
 | Gustavo Pugas Linczuk | RM573087 | [@gulinczuk](https://github.com/gulinczuk) |
-| _Nome do integrante_ | RM______ | [@usuario](https://github.com/usuario) |
-| _Nome do integrante_ | RM______ | [@usuario](https://github.com/usuario) |
+| Leonardo Bueno | RM572152 | [@leonardobueno1102-droid](https://github.com/leonardobueno1102-droid) |
+| João Vitor Veiga | RM569874 | [@JonisMaxWin](https://github.com/JonisMaxWin) |
+| Danilo Kheiti | RM574137 | [@DaniloKeithi](https://github.com/DaniloKeithi) |
 
 ---
 
@@ -387,7 +388,18 @@ Estão deliberadamente **fora do escopo** do produto: emissão de documento fisc
 
 ## Gestão do projeto
 
-O acompanhamento das sprints é feito em [inserir link do Trello ou Notion].
+O acompanhamento é feito no Notion, em **[CP1 — Gestor de Estoque](https://app.notion.com/p/3d0acb8b0e44817abed4db77e6486328)**, onde ficam o status de cada item da entrega, a divisão do trabalho em blocos e as decisões técnicas registradas.
+
+O backend foi dividido em quatro blocos, cada um revisado antes do seguinte:
+
+| Bloco | Conteúdo |
+|---|---|
+| A | Models, migration inicial e tratamento centralizado de erros |
+| B | Autenticação, JWT, papéis e CRUD de usuários |
+| C | Categorias, fornecedores, produtos, movimentações, saldo e alertas |
+| D | Seed, CORS, licença, README e validação final |
+
+O `errors.py` entrou no bloco A de propósito: o formato de erro precisava estar fechado antes da primeira regra que o utiliza.
 
 ---
 
