@@ -400,7 +400,8 @@ antes, e faça login como `admin@demo.com` / `admin123`.
 3. **Confirmar a identidade.** `GET /auth/me` devolve o usuário do token, sem
    nenhum campo de senha.
 4. **Listar produtos.** `GET /produtos` devolve o envelope paginado, e cada
-   item traz `saldo` e `em_ruptura` — nenhum dos dois é coluna do banco.
+   item traz `saldo` e `em_ruptura` — o saldo vem do cache `saldo_atual`, que
+   acompanha cada movimentação.
 5. **Ver os alertas.** `GET /estoque/alertas` lista apenas os produtos abaixo
    do estoque mínimo (RN-06). Com os dados do seed, são três.
 6. **Registrar uma entrada.** `POST /movimentacoes` com `tipo: ENTRADA`,

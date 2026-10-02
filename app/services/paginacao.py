@@ -36,20 +36,3 @@ def paginar(query, pagina: int = 1, por_pagina: int = POR_PAGINA_PADRAO) -> dict
         "total_paginas": resultado.pages,
     }
 
-
-def paginar_lista(itens: list, pagina: int, por_pagina: int) -> dict:
-    """Mesmo envelope, para listas já materializadas em memória.
-
-    Necessário quando o filtro depende do saldo: como o saldo é derivado do
-    histórico e não existe como coluna, o banco não consegue filtrar por ele.
-    """
-    _validar(pagina, por_pagina)
-    inicio = (pagina - 1) * por_pagina
-    total = len(itens)
-    return {
-        "itens": itens[inicio : inicio + por_pagina],
-        "pagina": pagina,
-        "por_pagina": por_pagina,
-        "total": total,
-        "total_paginas": (total + por_pagina - 1) // por_pagina,
-    }

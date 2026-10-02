@@ -1,7 +1,7 @@
 """Modelos de entrada e saída de produto.
 
-`saldo` e `em_ruptura` aparecem na saída mas não existem como coluna: são
-apurados a partir das movimentações e anexados pelo serviço.
+`saldo` e `em_ruptura` aparecem na saída mas não são campos de entrada: vêm
+do cache de saldo e da RN-06.
 """
 
 from flask_restx import fields
@@ -26,7 +26,7 @@ produto_saida = api.model(
         "unidade": fields.String(example="UN"),
         "ativo": fields.Boolean(example=True),
         "saldo": fields.Integer(
-            description="Somatório das movimentações; não é coluna do banco"
+            description="Saldo atual (cache mantido a cada movimentação; referência: o histórico)"
         ),
         "em_ruptura": fields.Boolean(
             description="Verdadeiro quando o saldo está abaixo do estoque mínimo (RN-06)"

@@ -46,8 +46,8 @@ class ListaDeProdutos(Resource):
     def get(self):
         """Lista os produtos da empresa do token.
 
-        Cada item traz o saldo apurado das movimentações e o indicador de
-        ruptura — nenhum dos dois é coluna do banco.
+        Cada item traz o saldo atual e o indicador de ruptura; o filtro
+        `em_ruptura` e a paginação acontecem no banco.
         """
         a = filtros.parse_args()
         return produto_service.listar(

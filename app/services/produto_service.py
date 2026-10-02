@@ -1,14 +1,14 @@
 """Produtos da própria empresa.
 
-O saldo e o indicador de ruptura não são colunas: vêm de `estoque_service`
-e são anexados ao objeto na hora de responder.
+Saldo e ruptura vêm do cache `produto.saldo_atual` (mantido por
+`movimentacao_service.registrar`), então filtro e paginação acontecem no banco.
 """
 
 from app.errors import NaoEncontrado, RegraDeNegocio, SemPermissao
 from app.extensions import db
 from app.models import Categoria, Fornecedor, Produto, RoleUsuario
 from app.services import estoque_service
-from app.services.paginacao import paginar, paginar_lista
+from app.services.paginacao import paginar
 from app.services.permissoes import MENSAGEM_EXCLUIR_PRODUTO, exigir_admin
 
 CAMPOS_EDITAVEIS = (
@@ -87,12 +87,11 @@ def _validar_preco_venda(usuario_logado, dados: dict, atual=None) -> None:
 
 
 def _com_saldo(produtos: list[Produto]) -> list[Produto]:
-    """Anexa saldo e ruptura aos objetos, para o marshal encontrar."""
-    apurado = estoque_service.saldos([produto.id for produto in produtos])
+    """Expõe o cache como `saldo` e calcula `em_ruptura`, para o marshal encontrar."""
     for produto in produtos:
-        produto.saldo = apurado[produto.id]
+        produto.saldo = produto.saldo_atual
         produto.em_ruptura = estoque_service.em_ruptura(
-            produto.estoque_minimo, produto.saldo
+            produto.estoque_minimo, produto.saldo_atual
         )
     return produtos
 
@@ -116,21 +115,14 @@ def listar(
         consulta = consulta.filter(
             db.or_(Produto.nome.ilike(termo), Produto.sku.ilike(termo))
         )
-    consulta = consulta.order_by(Produto.nome)
+    if em_ruptura is True:
+        consulta = consulta.filter(estoque_service.condicao_ruptura())
+    elif em_ruptura is False:
+        consulta = consulta.filter(~estoque_service.condicao_ruptura())
 
-    if em_ruptura is None:
-        pagina_atual = paginar(consulta, pagina, por_pagina)
-        _com_saldo(pagina_atual["itens"])
-        return pagina_atual
-
-    # O filtro de ruptura depende do saldo, que o banco não conhece: é
-    # preciso apurar tudo antes de paginar.
-    filtrados = [
-        produto
-        for produto in _com_saldo(consulta.all())
-        if produto.em_ruptura is em_ruptura
-    ]
-    return paginar_lista(filtrados, pagina, por_pagina)
+    pagina_atual = paginar(consulta.order_by(Produto.nome), pagina, por_pagina)
+    _com_saldo(pagina_atual["itens"])
+    return pagina_atual
 
 
 def obter(usuario_logado, produto_id: int) -> Produto:
