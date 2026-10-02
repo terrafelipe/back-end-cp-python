@@ -35,6 +35,14 @@
 - Mudou regra, endpoint ou schema: atualizar o README (RN, endpoints, roteiro) no mesmo commit.
 - Commits pequenos, assunto sem acento; push só com ok do Felipe (repo do grupo).
 
+## Como trabalhar aqui
+- Retomar o trabalho: `/briefing` (lê a ficha `projetos/cp-python.md` do AIOS e as Issues `aios`).
+- Plano do back aprovado: `docs/superpowers/plans/2026-09-25-cp2-backend.md`. Uma task por vez,
+  na ordem (testes antes do código); os desvios da SPEC aprovados estão no fim do plano.
+- Tarefa que mexe nas duas pontas: sessão aqui com `/add-dir ../frontend`.
+- Revisão cruzada `/revisar` (Codex) depois da Task 6 e no fim do plano.
+- Fechou tarefa: atualizar o Status do card no Notion "Tarefas do CP2" (com ok do Felipe) e a ficha.
+
 ## Armadilhas
 - Booleano em query string: usar `argumento_booleano` (`inputs.boolean`), nunca `type=bool`.
 - `ERROR_INCLUDE_MESSAGE=False` e `PROPAGATE_EXCEPTIONS=False` mantêm o envelope único e sem
