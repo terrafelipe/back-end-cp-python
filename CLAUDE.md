@@ -19,7 +19,7 @@
 - Setup: `python -m venv .venv; .\.venv\Scripts\python.exe -m pip install -r requirements.txt`
 - Dados demo: `.\.venv\Scripts\python.exe seed.py` (`--recriar` apaga e gera de novo)
 - Rodar: `.\.venv\Scripts\python.exe app.py` → http://127.0.0.1:5000/swagger
-- Testes: ainda não existem; quando existirem, `.\.venv\Scripts\python.exe -m pytest -q`
+- Testes: `.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt` (uma vez) e `.\.venv\Scripts\python.exe -m pytest -q`
 - Migration nova: `.\.venv\Scripts\flask.exe db migrate -m "..."` e revisar o arquivo gerado
 
 ## Regras do projeto

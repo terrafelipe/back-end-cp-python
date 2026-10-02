@@ -13,7 +13,12 @@ python -m venv .venv
 
 ## 1. Testes automatizados
 
-Ainda não existem (previstos para o CP2). Quando existirem: `.\.venv\Scripts\python.exe -m pytest -q`.
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt   # uma vez
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+Banco SQLite em memória, recriado a cada teste; nenhum teste acessa a rede.
 
 ## 2. Subir localmente e conferir (~2 min)
 

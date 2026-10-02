@@ -339,6 +339,17 @@ Os campos do JSON seguem `snake_case`. Senhas nunca aparecem em respostas — os
 
 ---
 
+## Testes
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt   # uma vez
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+A suíte usa SQLite em memória, recriado a cada teste, e não acessa a rede (a LLM é simulada).
+
+---
+
 ## Roteiro de validação
 
 Onze passos para conferir a API inteira pelo `/swagger`. Rode `python seed.py`
