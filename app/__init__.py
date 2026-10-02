@@ -84,6 +84,7 @@ def _registrar_namespaces(app: Flask) -> None:
     """
     from app.controllers.auth import ns as auth_ns
     from app.controllers.categorias import ns as categorias_ns
+    from app.controllers.dashboard import ns as dashboard_ns
     from app.controllers.estoque import ns as estoque_ns
     from app.controllers.fornecedores import ns as fornecedores_ns
     from app.controllers.health import ns as health_ns
@@ -99,5 +100,6 @@ def _registrar_namespaces(app: Flask) -> None:
     api.add_namespace(produtos_ns, path="/produtos")
     api.add_namespace(movimentacoes_ns, path="/movimentacoes")
     api.add_namespace(estoque_ns, path="/estoque")
+    api.add_namespace(dashboard_ns, path="/dashboard")
 
     api.init_app(app)

@@ -328,6 +328,12 @@ Todas exigem perfil `ADMIN`, exceto a consulta individual.
 | `GET` | `/estoque/saldo` | Saldo consolidado de todos os produtos |
 | `GET` | `/estoque/alertas` | Produtos abaixo do estoque mínimo |
 
+### Dashboard
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/dashboard/resumo?dias=30` | KPIs, entradas × saídas por dia, valor por categoria, top 5 saídas e alertas, numa requisição (período de 1 a 365 dias, em UTC) |
+
 Todos os endpoints, exceto `/auth/register` e `/auth/login`, exigem o cabeçalho `Authorization: Bearer <token>`.
 
 ---
