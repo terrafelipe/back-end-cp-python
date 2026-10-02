@@ -97,6 +97,14 @@ def run_migrations_online():
     connectable = get_engine()
 
     with connectable.connect() as connection:
+        # O modo batch recria tabelas no SQLite (DROP + RENAME). Com a FK
+        # ligada, o DROP de uma tabela referenciada falha. Desliga só aqui,
+        # confere a integridade no fim e religa antes de devolver a conexão.
+        sqlite = connection.dialect.name == "sqlite"
+        if sqlite:
+            connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
+            connection.commit()
+
         context.configure(
             connection=connection,
             target_metadata=get_metadata(),
@@ -105,6 +113,13 @@ def run_migrations_online():
 
         with context.begin_transaction():
             context.run_migrations()
+
+        if sqlite:
+            violacoes = connection.exec_driver_sql("PRAGMA foreign_key_check").fetchall()
+            connection.exec_driver_sql("PRAGMA foreign_keys=ON")
+            connection.commit()
+            if violacoes:
+                raise RuntimeError(f"Migration deixou chave estrangeira quebrada: {violacoes[:5]}")
 
 
 if context.is_offline_mode():

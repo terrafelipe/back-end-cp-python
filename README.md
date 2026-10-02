@@ -146,6 +146,8 @@ erDiagram
     CATEGORIA ||--o{ PRODUTO : classifica
     FORNECEDOR ||--o{ PRODUTO : fornece
     PRODUTO ||--o{ MOVIMENTACAO : registra
+    EMPRESA ||--o{ RELATORIO_IA : possui
+    USUARIO ||--o{ RELATORIO_IA : gera
     USUARIO ||--o{ MOVIMENTACAO : executa
 
     EMPRESA {
@@ -190,7 +192,18 @@ erDiagram
         int estoque_minimo
         string unidade
         bool ativo
+        int saldo_atual
         int empresa_id FK
+        datetime criado_em
+    }
+    RELATORIO_IA {
+        int id PK
+        int empresa_id FK
+        int usuario_id FK
+        string origem
+        string modelo
+        json entrada
+        json resultado
         datetime criado_em
     }
     MOVIMENTACAO {
@@ -207,7 +220,7 @@ erDiagram
 
 ### Decisões de modelagem
 
-**O saldo não é armazenado.** Não existe coluna `saldo` em `produto` — o valor é derivado da soma das movimentações do item. A escolha evita estado duplicado e a possibilidade de o saldo divergir do histórico que o originou. Caso a leitura se torne custosa, o caminho previsto é adicionar um cache de saldo, tratado explicitamente como desnormalização por desempenho.
+**O saldo nasce do histórico.** O valor de referência é a soma das movimentações do item. No CP2 entrou a coluna `saldo_atual` como cache, tratada como desnormalização por desempenho — ver "Revisão do banco (CP2)".
 
 **Multi-tenant desde o início.** Toda entidade de domínio carrega `empresa_id`. Isolar dados por empresa depois que o sistema já tem uso é retrabalho considerável, e essa coluna também sustenta o modelo de planos previsto para etapas seguintes.
 
@@ -216,6 +229,30 @@ erDiagram
 **Desativação em vez de exclusão, também para usuário.** `usuario` tem a coluna `ativo` pelo mesmo motivo que `produto`: quem já registrou uma movimentação não pode ser apagado sem quebrar a trilha de auditoria — a chave estrangeira recusa. Sem essa coluna, o `DELETE /usuarios/{id}` só funcionaria para quem nunca operou o estoque, justamente o caso que não interessa. É também o que torna verificável a regra de manter ao menos um `ADMIN` **ativo**.
 
 **`AJUSTE` é contagem, não soma.** Uma movimentação do tipo `AJUSTE` **define** o saldo pelo valor informado, em vez de somar a ele. A leitura decorre do próprio modelo: como a quantidade é sempre positiva (RN-03) e a correção precisa poder ir nos dois sentidos (RN-04), um ajuste de sinal fixo não conseguiria baixar o saldo. Na prática é a contagem de inventário — o operador informa o que contou na prateleira, e as movimentações posteriores voltam a somar e subtrair normalmente.
+
+### Revisão do banco (CP2)
+
+**Cache de saldo (`produto.saldo_atual`).** No CP1 o saldo era recalculado do histórico a cada
+leitura, e `/estoque/alertas` e `/produtos?em_ruptura=` liam todas as movimentações e filtravam em
+Python, sem paginar no banco. O CP2 acrescenta a coluna como desnormalização deliberada, com três
+garantias: (1) só `movimentacao_service.registrar` escreve nela, na mesma transação da
+movimentação; (2) `CHECK (saldo_atual >= 0)` repete a RN-02 no banco; (3) os testes comparam o
+cache com o saldo derivado do histórico depois de entrada, saída e ajuste. A migration preenche a
+coluna a partir do histórico existente.
+
+| Índice novo | Atende |
+|---|---|
+| `produto(empresa_id, ativo)` | toda listagem de produto filtra pela empresa e, por padrão, só ativos |
+| `produto(categoria_id)`, `produto(fornecedor_id)` | filtro por categoria e a checagem "em uso" antes de excluir |
+| `categoria(empresa_id)`, `fornecedor(empresa_id)`, `usuario(empresa_id)` | listagens por empresa; o UNIQUE composto começa por outra coluna e não serve |
+| `movimentacao(usuario_id)` | FK sem índice; auditoria por usuário |
+| `relatorio_ia(empresa_id, criado_em)` | último relatório e histórico paginado |
+
+**Tabela `relatorio_ia`.** Cada relatório de reposição fica salvo com a origem (`LLM` ou `REGRAS`),
+o modelo, a entrada enviada e o resultado, em JSON. Mostrar o último relatório não chama a LLM de novo.
+
+**Normalização.** O resto segue na 3FN: `movimentacao` continua sem `empresa_id` (a empresa vem do
+produto) e `saldo_atual` é a única redundância, documentada acima.
 
 ---
 

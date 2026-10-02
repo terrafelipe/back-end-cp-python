@@ -22,11 +22,16 @@ def _da_empresa(usuario_logado):
     )
 
 
-def _produto_da_empresa(usuario_logado, produto_id: int) -> Produto:
-    produto = Produto.query.filter(
+def _produto_da_empresa(usuario_logado, produto_id: int, bloquear: bool = False) -> Produto:
+    consulta = Produto.query.filter(
         Produto.id == produto_id,
         Produto.empresa_id == usuario_logado.empresa_id,
-    ).first()
+    )
+    if bloquear:
+        # SELECT ... FOR UPDATE no Postgres: duas saídas simultâneas não leem o
+        # mesmo saldo. O SQLite ignora (ele já serializa as escritas).
+        consulta = consulta.with_for_update()
+    produto = consulta.first()
     if produto is None:
         raise NaoEncontrado("Produto não encontrado.")
     return produto
@@ -81,8 +86,12 @@ def por_produto(usuario_logado, produto_id: int, pagina: int, por_pagina: int) -
 
 
 def registrar(usuario_logado, dados: dict) -> Movimentacao:
-    """Registra a movimentação e aplica RN-02 e RN-07."""
-    produto = _produto_da_empresa(usuario_logado, dados["produto_id"])
+    """Registra a movimentação e aplica RN-02 e RN-07.
+
+    Único ponto que escreve `produto.saldo_atual`: o cache muda na mesma
+    transação que grava a movimentação, então os dois não divergem.
+    """
+    produto = _produto_da_empresa(usuario_logado, dados["produto_id"], bloquear=True)
     if not produto.ativo:
         raise RegraDeNegocio(
             "HTTP-422",
@@ -93,7 +102,7 @@ def registrar(usuario_logado, dados: dict) -> Movimentacao:
     tipo = TipoMovimentacao(dados["tipo"])
     quantidade = dados["quantidade"]
     custo_unitario = dados.get("custo_unitario")
-    saldo_atual = estoque_service.saldo(produto.id)
+    saldo_atual = produto.saldo_atual
 
     if tipo is TipoMovimentacao.SAIDA and quantidade > saldo_atual:
         # RN-02 — saldo negativo representaria a venda de item inexistente.
@@ -112,6 +121,8 @@ def registrar(usuario_logado, dados: dict) -> Movimentacao:
             quantidade,
             custo_unitario,
         )
+
+    produto.saldo_atual = estoque_service.saldo_apos(saldo_atual, tipo, quantidade)
 
     movimentacao = Movimentacao(
         produto_id=produto.id,

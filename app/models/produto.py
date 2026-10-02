@@ -1,7 +1,9 @@
 """Produto.
 
-Não existe coluna `saldo`: o saldo é sempre derivado da soma das
-movimentações do item. Ver `services/estoque_service.py`.
+`saldo_atual` é um cache do saldo, desnormalizado por desempenho no CP2:
+só `movimentacao_service.registrar` escreve nele, na mesma transação da
+movimentação. O saldo de referência continua sendo o derivado do histórico
+(`estoque_service.saldos`), e os testes comparam os dois.
 """
 
 from app.extensions import db
@@ -16,6 +18,10 @@ class Produto(db.Model):
         db.CheckConstraint("preco_custo >= 0", name="preco_custo_nao_negativo"),
         db.CheckConstraint("preco_venda >= 0", name="preco_venda_nao_negativo"),
         db.CheckConstraint("estoque_minimo >= 0", name="estoque_minimo_nao_negativo"),
+        # RN-02 repetida no banco: o cache nunca fica negativo.
+        db.CheckConstraint("saldo_atual >= 0", name="saldo_atual_nao_negativo"),
+        # Toda listagem filtra pela empresa e, por padrão, só os ativos.
+        db.Index("ix_produto_empresa_id_ativo", "empresa_id", "ativo"),
     )
 
     id = db.Column(db.Integer, primary_key=True)
@@ -25,8 +31,12 @@ class Produto(db.Model):
     nome = db.Column(db.String(160), nullable=False)
     descricao = db.Column(db.Text, nullable=True)
 
-    categoria_id = db.Column(db.Integer, db.ForeignKey("categoria.id"), nullable=False)
-    fornecedor_id = db.Column(db.Integer, db.ForeignKey("fornecedor.id"), nullable=True)
+    categoria_id = db.Column(
+        db.Integer, db.ForeignKey("categoria.id"), nullable=False, index=True
+    )
+    fornecedor_id = db.Column(
+        db.Integer, db.ForeignKey("fornecedor.id"), nullable=True, index=True
+    )
 
     preco_custo = db.Column(db.Numeric(12, 2), nullable=False, default=0)
     preco_venda = db.Column(db.Numeric(12, 2), nullable=False, default=0)
@@ -34,6 +44,9 @@ class Produto(db.Model):
     unidade = db.Column(db.String(10), nullable=False, default="UN")
     # RN-05 — exclusão de produto com movimentação vira desativação.
     ativo = db.Column(db.Boolean, nullable=False, default=True)
+    # Cache do saldo (ver docstring do módulo). server_default para o
+    # ALTER TABLE preencher as linhas existentes antes do backfill.
+    saldo_atual = db.Column(db.Integer, nullable=False, default=0, server_default="0")
 
     empresa_id = db.Column(db.Integer, db.ForeignKey("empresa.id"), nullable=False)
     criado_em = db.Column(db.DateTime(timezone=True), nullable=False, default=agora_utc)

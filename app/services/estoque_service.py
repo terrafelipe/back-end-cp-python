@@ -1,26 +1,32 @@
-"""Saldo derivado do histórico, ruptura e custo médio (RN-02, RN-06, RN-07).
+"""Saldo, ruptura e custo médio (RN-02, RN-06, RN-07).
 
-Não existe coluna de saldo em `produto`: o valor é sempre recalculado a
-partir das movimentações, então não tem como divergir do histórico que o
-originou.
+O saldo lido pela API vem do cache `produto.saldo_atual`. `saldos()` recalcula
+a partir do histórico: é a referência contra a qual o cache é testado.
 """
 
 from decimal import ROUND_HALF_UP, Decimal
 
-from app.models import Movimentacao, TipoMovimentacao
+from app.models import Movimentacao, Produto, TipoMovimentacao
 
 CENTAVO = Decimal("0.01")
 
 
-def saldos(produto_ids: list[int]) -> dict[int, int]:
-    """Saldo de vários produtos numa única consulta.
+def saldo_apos(saldo_atual: int, tipo: TipoMovimentacao, quantidade: int) -> int:
+    """Saldo depois de uma movimentação.
 
-    `AJUSTE` **define** o saldo em vez de somar a ele. É a única leitura
-    compatível com o modelo: a quantidade é sempre positiva (RN-03) e a
-    correção precisa poder ir nos dois sentidos (RN-04) — o que um delta de
-    sinal fixo não permitiria. Na prática é a contagem de inventário: o
-    operador informa o que contou na prateleira.
+    `AJUSTE` **define** o saldo em vez de somar a ele: a quantidade é sempre
+    positiva (RN-03) e a correção precisa poder ir nos dois sentidos (RN-04).
+    Na prática é a contagem de inventário.
     """
+    if tipo is TipoMovimentacao.AJUSTE:
+        return quantidade
+    if tipo is TipoMovimentacao.ENTRADA:
+        return saldo_atual + quantidade
+    return saldo_atual - quantidade
+
+
+def saldos(produto_ids: list[int]) -> dict[int, int]:
+    """Saldo de vários produtos recalculado do histórico, numa única consulta."""
     apurado = {produto_id: 0 for produto_id in produto_ids}
     if not produto_ids:
         return apurado
@@ -33,12 +39,9 @@ def saldos(produto_ids: list[int]) -> dict[int, int]:
         .all()
     )
     for movimentacao in historico:
-        if movimentacao.tipo is TipoMovimentacao.AJUSTE:
-            apurado[movimentacao.produto_id] = movimentacao.quantidade
-        elif movimentacao.tipo is TipoMovimentacao.ENTRADA:
-            apurado[movimentacao.produto_id] += movimentacao.quantidade
-        else:
-            apurado[movimentacao.produto_id] -= movimentacao.quantidade
+        apurado[movimentacao.produto_id] = saldo_apos(
+            apurado[movimentacao.produto_id], movimentacao.tipo, movimentacao.quantidade
+        )
     return apurado
 
 
@@ -49,6 +52,11 @@ def saldo(produto_id: int) -> int:
 def em_ruptura(estoque_minimo: int, saldo_atual: int) -> bool:
     """RN-06 — saldo abaixo do mínimo sinaliza reposição."""
     return saldo_atual < estoque_minimo
+
+
+def condicao_ruptura():
+    """RN-06 em SQL, para filtrar e contar no banco. Mesmo critério de `em_ruptura`."""
+    return Produto.saldo_atual < Produto.estoque_minimo
 
 
 def custo_medio_ponderado(

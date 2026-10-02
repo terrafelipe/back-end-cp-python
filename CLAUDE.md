@@ -25,7 +25,8 @@
 ## Regras do projeto
 - Regra de negócio só em `services/`; controller nunca decide. Violação = exceção de domínio com
   código `RN-xx` → HTTP 422 no envelope `{"erro": {"codigo", "mensagem", "campo"}}`.
-- Nunca criar coluna de saldo: é derivado das movimentações. Movimentação é imutável (RN-04).
+- `produto.saldo_atual` é cache do saldo: só `movimentacao_service.registrar` escreve nele, e os
+  testes comparam com o derivado do histórico. Movimentação é imutável (RN-04).
 - `AJUSTE` define o saldo (contagem), não soma. Quantidade sempre positiva (RN-03).
 - Recurso de outra empresa responde 404, nunca 403 (RN-08). `empresa_id` vem do token, nunca do cliente.
 - Schemas de saída separados dos de entrada; senha nunca aparece em resposta.

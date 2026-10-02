@@ -13,7 +13,9 @@ class Categoria(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(80), nullable=False)
-    empresa_id = db.Column(db.Integer, db.ForeignKey("empresa.id"), nullable=False)
+    empresa_id = db.Column(
+        db.Integer, db.ForeignKey("empresa.id"), nullable=False, index=True
+    )
 
     empresa = db.relationship("Empresa", back_populates="categorias")
     produtos = db.relationship("Produto", back_populates="categoria")

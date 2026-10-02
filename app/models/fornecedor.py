@@ -16,7 +16,9 @@ class Fornecedor(db.Model):
     cnpj = db.Column(db.String(18), nullable=True)
     email = db.Column(db.String(180), nullable=True)
     telefone = db.Column(db.String(20), nullable=True)
-    empresa_id = db.Column(db.Integer, db.ForeignKey("empresa.id"), nullable=False)
+    empresa_id = db.Column(
+        db.Integer, db.ForeignKey("empresa.id"), nullable=False, index=True
+    )
 
     empresa = db.relationship("Empresa", back_populates="fornecedores")
     produtos = db.relationship("Produto", back_populates="fornecedor")

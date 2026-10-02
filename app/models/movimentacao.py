@@ -38,7 +38,9 @@ class Movimentacao(db.Model):
     # Só faz sentido em ENTRADA; é o insumo da RN-07 (custo médio ponderado).
     custo_unitario = db.Column(db.Numeric(12, 2), nullable=True)
     motivo = db.Column(db.String(255), nullable=True)
-    usuario_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=False)
+    usuario_id = db.Column(
+        db.Integer, db.ForeignKey("usuario.id"), nullable=False, index=True
+    )
     # Indexado porque o extrato filtra por período (`de` / `ate`).
     criado_em = db.Column(
         db.DateTime(timezone=True), nullable=False, default=agora_utc, index=True

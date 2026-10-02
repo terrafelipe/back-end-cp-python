@@ -34,7 +34,9 @@ class Usuario(db.Model):
     # Desativação lógica: um usuário que já registrou movimentação não pode
     # ser removido sem quebrar a trilha de auditoria (mesmo motivo da RN-05).
     ativo = db.Column(db.Boolean, nullable=False, default=True)
-    empresa_id = db.Column(db.Integer, db.ForeignKey("empresa.id"), nullable=False)
+    empresa_id = db.Column(
+        db.Integer, db.ForeignKey("empresa.id"), nullable=False, index=True
+    )
     criado_em = db.Column(db.DateTime(timezone=True), nullable=False, default=agora_utc)
 
     empresa = db.relationship("Empresa", back_populates="usuarios")

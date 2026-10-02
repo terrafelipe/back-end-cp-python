@@ -50,8 +50,9 @@ api = Api(
     title="Gestor de Estoque API",
     description=(
         "API de gestão de estoque para pequeno comércio.\n\n"
-        "O saldo de cada produto é **derivado** das movimentações — não existe "
-        "coluna de saldo. Toda a regra de negócio é aplicada no backend e "
+        "O saldo de cada produto nasce das movimentações; a coluna `saldo_atual` "
+        "é só um cache, escrito na mesma transação da movimentação. "
+        "Toda a regra de negócio é aplicada no backend e "
         "identificada por um código `RN-xx` na mensagem de erro."
     ),
     doc="/swagger",

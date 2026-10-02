@@ -23,3 +23,10 @@ class TipoMovimentacao(str, enum.Enum):
     ENTRADA = "ENTRADA"
     SAIDA = "SAIDA"
     AJUSTE = "AJUSTE"
+
+
+class OrigemRelatorio(str, enum.Enum):
+    """Quem escreveu o relatório de reposição: a LLM ou as regras do sistema."""
+
+    LLM = "LLM"
+    REGRAS = "REGRAS"
