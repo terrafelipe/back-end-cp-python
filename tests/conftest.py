@@ -13,7 +13,7 @@ import pytest
 from flask_jwt_extended import create_access_token
 
 from app import create_app
-from app.config import Config
+from app.config import CORS_ORIGINS_PADRAO, Config
 from app.extensions import db
 from app.models import Categoria, Empresa, RoleUsuario, Usuario
 from app.security import gerar_hash
@@ -27,6 +27,8 @@ class ConfigTeste(Config):
     AUTO_MIGRATE = False
     SECRET_KEY = "segredo-de-teste-" + "x" * 32
     JWT_SECRET_KEY = "jwt-de-teste-" + "y" * 32
+    # O teste não depende do .env de quem roda.
+    CORS_ORIGINS = CORS_ORIGINS_PADRAO
     # Sem chave: nenhum teste chama a LLM, a não ser que peça (fixture com_chave).
     GROQ_API_KEY = ""
     GROQ_MODEL = "modelo-de-teste"

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from flask import Flask
 
-from app.config import Config
+from app.config import Config, problemas_de_seguranca
 from app.extensions import api, cors, db, jwt, migrate
 
 logger = logging.getLogger(__name__)
@@ -15,6 +15,13 @@ def create_app(config_object: type[Config] = Config) -> Flask:
     """Cria e configura a instância do Flask."""
     app = Flask(__name__)
     app.config.from_object(config_object)
+    # Antes de qualquer registro: falhar aqui não deixa a Api global pela metade.
+    problemas = problemas_de_seguranca(app.config)
+    if problemas:
+        raise RuntimeError(
+            "A aplicação não sobe com FLASK_DEBUG=0 sem chaves próprias:\n- "
+            + "\n- ".join(problemas)
+        )
     # Mesma razão do RESTX_JSON: vale para o `jsonify` do próprio Flask,
     # usado pelos tratadores de erro fora do flask-restx.
     app.json.ensure_ascii = False

@@ -89,7 +89,7 @@ Todas são opcionais: o projeto roda sem `.env`.
 | Variável | Descrição | Padrão |
 |---|---|---|
 | `DATABASE_URL` | String de conexão. Trocar de banco é só trocar esta linha. | `sqlite:///estoque.db` na raiz |
-| `SECRET_KEY` | Chave da aplicação | chave de desenvolvimento |
+| `SECRET_KEY` | Chave da aplicação; com `FLASK_DEBUG=0` a API não sobe sem uma chave própria de 32+ caracteres | chave de desenvolvimento |
 | `JWT_SECRET_KEY` | Chave de assinatura dos tokens | o valor de `SECRET_KEY` |
 | `JWT_EXPIRES_HOURS` | Validade do token, em horas | `8` |
 | `AUTO_MIGRATE` | Aplica as migrations pendentes ao subir | `1` |
@@ -98,7 +98,7 @@ Todas são opcionais: o projeto roda sem `.env`.
 | `PORT` | Porta | `5000` |
 | `SWAGGER_URL` | Caminho da documentação | `/swagger` |
 | `SQLALCHEMY_ECHO` | Imprime o SQL gerado, útil para depurar | `0` |
-| `CORS_ORIGINS` | Origens aceitas, separadas por vírgula | `*` |
+| `CORS_ORIGINS` | Origens aceitas, separadas por vírgula | `http://localhost:5173,http://127.0.0.1:5173` |
 | `GROQ_API_KEY` | Chave da Groq; sem ela o relatório de reposição usa as regras | vazio |
 | `GROQ_MODEL` | Modelo da Groq | `openai/gpt-oss-120b` |
 | `LLM_TIMEOUT_S` | Segundos até desistir da LLM e usar as regras | `20` |

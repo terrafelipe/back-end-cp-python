@@ -13,7 +13,11 @@ from app import aplicar_migrations, create_app
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
-app = create_app()
+try:
+    app = create_app()
+except RuntimeError as erro:
+    # Mensagem limpa, sem traceback: é erro de configuração, não de código.
+    raise SystemExit(f"\nERRO de configuração: {erro}\n")
 
 
 if __name__ == "__main__":

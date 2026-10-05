@@ -33,11 +33,41 @@ def _env_int(name: str, default: int) -> int:
     return int(raw)
 
 
+SEGREDO_DEV = "dev-secret-apenas-local-nao-usar-em-producao"
+# Valores de exemplo do .env.example: copiados sem trocar, valem tanto quanto nenhum.
+SEGREDOS_CONHECIDOS = {
+    SEGREDO_DEV,
+    "troque-esta-chave-em-qualquer-ambiente-que-nao-seja-local",
+    "troque-esta-chave-tambem",
+}
+TAMANHO_MINIMO_SEGREDO = 32
+CORS_ORIGINS_PADRAO = "http://localhost:5173,http://127.0.0.1:5173"
+
+
+def problemas_de_seguranca(config) -> list[str]:
+    """O que impede a aplicação de subir fora do modo debug. Vazia = pode subir.
+
+    Com FLASK_DEBUG=0 a chave de desenvolvimento assinaria tokens válidos para
+    qualquer um que leia este repositório.
+    """
+    if config.get("DEBUG"):
+        return []
+    problemas = []
+    for nome in ("SECRET_KEY", "JWT_SECRET_KEY"):
+        valor = config.get(nome) or ""
+        if valor in SEGREDOS_CONHECIDOS or len(valor) < TAMANHO_MINIMO_SEGREDO:
+            problemas.append(
+                f"{nome} ausente, curta ou com valor de exemplo. Gere uma com: "
+                'python -c "import secrets; print(secrets.token_hex(32))"'
+            )
+    return problemas
+
+
 class Config:
     """Configuração única, parametrizada por ambiente."""
 
     # --- Flask ---------------------------------------------------------
-    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-apenas-local-nao-usar-em-producao")
+    SECRET_KEY = os.getenv("SECRET_KEY") or SEGREDO_DEV
     DEBUG = _env_bool("FLASK_DEBUG", default=True)
 
     # --- Banco de dados ------------------------------------------------
@@ -75,10 +105,9 @@ class Config:
     PROPAGATE_EXCEPTIONS = False
 
     # --- CORS ----------------------------------------------------------
-    # Lista separada por vírgula. O padrão libera qualquer origem, o que
-    # serve para o frontend da próxima entrega rodar em outra porta sem
-    # configuração. Em produção, restrinja aos domínios reais.
-    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*")
+    # Lista separada por vírgula. O padrão aceita só o front local do Vite;
+    # em qualquer outro ambiente, informe os domínios reais.
+    CORS_ORIGINS = os.getenv("CORS_ORIGINS", CORS_ORIGINS_PADRAO)
 
     # --- LLM (relatório de reposição) ----------------------------------
     # Sem chave, o relatório sai pelas regras (origem REGRAS), sem erro.
