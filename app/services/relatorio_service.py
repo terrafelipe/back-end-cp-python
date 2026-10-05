@@ -29,11 +29,15 @@ COBERTURA_ALERTA_DIAS = 15
 
 
 def _dias_ate_acabar(saldo: int, consumo_30d: int) -> float | None:
-    """Cobertura no ritmo dos últimos 30 dias. None = não houve saída."""
-    if saldo <= 0:
-        return 0.0
+    """Cobertura no ritmo dos últimos 30 dias. None = não houve saída.
+
+    Sem saída não há ritmo: produto zerado e parado não "acaba em 0 dias".
+    Se estiver abaixo do mínimo, a ruptura (RN-06) já o coloca no relatório.
+    """
     if consumo_30d == 0:
         return None
+    if saldo <= 0:
+        return 0.0
     return round(saldo / (consumo_30d / JANELA_CONSUMO_DIAS), 1)
 
 

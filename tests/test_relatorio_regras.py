@@ -85,3 +85,9 @@ def test_entrada_salva_so_tem_os_campos_permitidos(cliente, dados, h_admin):
     texto = json.dumps(entrada, ensure_ascii=False)
     for proibido in ("admin@a.com", dados.empresa.cnpj, dados.empresa.nome):
         assert proibido not in texto
+
+
+def test_produto_zerado_sem_minimo_e_sem_vendas_nao_precisa_de_reposicao(cliente, dados, h_admin):
+    _produto(cliente, h_admin, dados.categoria.id, "NOVO", minimo=0, entrada=0)
+    corpo = cliente.post("/relatorios/reposicao", headers=h_admin).get_json()
+    assert corpo["resultado"]["prioridades"] == []
