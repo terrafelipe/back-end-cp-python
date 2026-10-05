@@ -18,7 +18,8 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Banco SQLite em memória, recriado a cada teste; nenhum teste acessa a rede.
+Banco SQLite em memória, recriado a cada teste; nenhum teste acessa a rede. Esperado em
+05/10/2026: `88 passed`.
 
 ## 2. Subir localmente e conferir (~2 min)
 
@@ -31,6 +32,14 @@ Banco SQLite em memória, recriado a cada teste; nenhum teste acessa a rede.
 - `POST /auth/login` com `admin@demo.com` / `admin123` → `access_token`; em **Authorize**, `Bearer <token>`
 - `GET /estoque/alertas` → 3 produtos em ruptura (dados do seed)
 - `GET /dashboard/resumo?dias=30` → série com 30 dias preenchidos
+
+## 3. Relatório de reposição com IA (~1 min)
+
+Opcional: copie `.env.example` para `.env` e preencha `GROQ_API_KEY` (crie em console.groq.com).
+
+- `POST /relatorios/reposicao` → 201 com `origem: "LLM"` e `modelo: "openai/gpt-oss-120b"`
+- Sem chave → 201 com `origem: "REGRAS"` (fallback, nunca 500)
+- `GET /relatorios/reposicao/ultimo` → o mesmo relatório, sem chamar a LLM de novo
 
 ## 5. Cenários de negócio
 
@@ -45,3 +54,4 @@ RN-02; editar movimentação → 405 RN-04; operador excluindo produto → 403 R
 | 401 em tudo no Swagger | token sem o prefixo | informar `Bearer <token>` no Authorize |
 | Seed diz "dados já existem" | a empresa demo já está no banco | `.\.venv\Scripts\python.exe seed.py --recriar` |
 | Acentos quebrados ao ler `.env.example` | PowerShell 5.1 lê como ANSI | `Get-Content -Encoding UTF8` |
+| Relatório sai `REGRAS` mesmo com chave | `GROQ_MODEL` antigo no `.env` (`llama-3.3-70b-versatile` saiu da Groq) | apagar a linha ou usar `openai/gpt-oss-120b` |
