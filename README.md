@@ -334,6 +334,14 @@ Todas exigem perfil `ADMIN`, exceto a consulta individual.
 |---|---|---|
 | `GET` | `/dashboard/resumo?dias=30` | KPIs, entradas × saídas por dia, valor por categoria, top 5 saídas e alertas, numa requisição (período de 1 a 365 dias, em UTC) |
 
+### Relatório de reposição (IA)
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `POST` | `/relatorios/reposicao` | Gera e salva o relatório (LLM ou, sem ela, regras) |
+| `GET` | `/relatorios/reposicao/ultimo` | Último relatório, sem nova chamada à LLM (`404` se nunca gerado) |
+| `GET` | `/relatorios/reposicao` | Histórico paginado |
+
 Todos os endpoints, exceto `/auth/register` e `/auth/login`, exigem o cabeçalho `Authorization: Bearer <token>`.
 
 ---
