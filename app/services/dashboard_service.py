@@ -73,8 +73,15 @@ def _kpis(empresa_id: int, inicio: datetime) -> dict:
     }
 
 
+def _dia_utc(dialeto: str):
+    """Dia UTC do registro. No Postgres, date(timestamptz) usaria o fuso da sessão."""
+    if dialeto == "postgresql":
+        return func.date(func.timezone("UTC", Movimentacao.criado_em))
+    return func.date(Movimentacao.criado_em)
+
+
 def _serie_diaria(empresa_id: int, inicio: datetime, de, dias: int) -> list[dict]:
-    dia = func.date(Movimentacao.criado_em)
+    dia = _dia_utc(db.engine.dialect.name)
     linhas = (
         db.session.query(
             dia,

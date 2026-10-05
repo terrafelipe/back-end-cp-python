@@ -80,3 +80,14 @@ def test_top_saidas_limita_a_cinco_em_ordem(cliente, dados, h_admin):
 
 def test_dashboard_exige_token(cliente):
     assert cliente.get("/dashboard/resumo").status_code == 401
+
+
+def test_dia_da_serie_e_contado_em_utc_tambem_no_postgres():
+    from sqlalchemy.dialects import postgresql, sqlite
+
+    from app.services.dashboard_service import _dia_utc
+
+    no_postgres = str(_dia_utc("postgresql").compile(dialect=postgresql.dialect()))
+    no_sqlite = str(_dia_utc("sqlite").compile(dialect=sqlite.dialect()))
+    assert "timezone(" in no_postgres
+    assert "timezone(" not in no_sqlite
