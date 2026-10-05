@@ -7,10 +7,15 @@ Uso:
 As movimentações são registradas pelo próprio serviço, e não por inserção
 direta: assim o custo médio (RN-07) sai calculado pela mesma regra que a
 API usa, e o seed serve como prova de que ela funciona.
+
+Gera 60 dias de histórico com datas passadas (compras semanais, vendas
+diárias), sempre igual, terminando com três produtos em ruptura.
 """
 
 import logging
+import random
 import sys
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from app import aplicar_migrations, create_app
@@ -21,19 +26,22 @@ from app.models import (
     Fornecedor,
     Movimentacao,
     Produto,
+    RelatorioIA,
     RoleUsuario,
     Usuario,
 )
+from app.models.base import agora_utc
 from app.security import gerar_hash
 from app.services import movimentacao_service
 
-CNPJ_DEMO = "12.345.678/0001-90"
+CNPJ_DEMO = "12.345.678/0001-95"
+EMAIL_ADMIN_DEMO = "admin@demo.com"
 
 CATEGORIAS = ["Bebidas", "Mercearia", "Limpeza", "Hortifrúti"]
 
 FORNECEDORES = [
-    ("Distribuidora Sul", "11.222.333/0001-44", "contato@distsul.com.br", "(11) 3344-5566"),
-    ("Atacado Central", "55.666.777/0001-88", "vendas@atacadocentral.com.br", "(11) 2233-4455"),
+    ("Distribuidora Sul", "11.222.333/0001-81", "contato@distsul.com.br", "(11) 3344-5566"),
+    ("Atacado Central", "55.666.777/0001-81", "vendas@atacadocentral.com.br", "(11) 2233-4455"),
     ("Fazenda Boa Vista", None, "boavista@fazenda.com.br", "(19) 99887-7665"),
 ]
 
@@ -49,34 +57,75 @@ PRODUTOS = [
     ("HOR-BANANA-KG", "Banana Prata", "Hortifrúti", 2, "6.90", 15, "KG"),
 ]
 
-# sku, tipo, quantidade, custo unitário, motivo
-MOVIMENTACOES = [
-    ("BEB-COLA-350", "ENTRADA", 120, "3.10", "Compra nota 10021"),
-    ("BEB-COLA-350", "ENTRADA", 80, "3.50", "Compra nota 10044"),
-    ("BEB-COLA-350", "SAIDA", 95, None, "Venda do dia"),
-    ("BEB-AGUA-500", "ENTRADA", 240, "1.10", "Compra nota 10022"),
-    ("BEB-AGUA-500", "SAIDA", 210, None, "Venda da semana"),
-    ("BEB-SUCO-1L", "ENTRADA", 60, "6.40", "Compra nota 10023"),
-    ("BEB-SUCO-1L", "SAIDA", 18, None, "Venda do dia"),
-    ("MER-ARROZ-5KG", "ENTRADA", 100, "19.80", "Compra nota 10030"),
-    ("MER-ARROZ-5KG", "ENTRADA", 50, "21.40", "Compra nota 10055"),
-    ("MER-ARROZ-5KG", "SAIDA", 62, None, "Venda da semana"),
-    ("MER-FEIJAO-1KG", "ENTRADA", 90, "5.70", "Compra nota 10031"),
-    ("MER-FEIJAO-1KG", "SAIDA", 74, None, "Venda da semana"),
-    ("LIM-DETER-500", "ENTRADA", 150, "1.90", "Compra nota 10040"),
-    ("LIM-DETER-500", "SAIDA", 40, None, "Venda do dia"),
-    ("LIM-SABAO-1L", "ENTRADA", 40, "12.30", "Compra nota 10041"),
-    ("LIM-SABAO-1L", "SAIDA", 33, None, "Venda da semana"),
-    ("HOR-BANANA-KG", "ENTRADA", 80, "3.80", "Compra da feira"),
-    ("HOR-BANANA-KG", "SAIDA", 55, None, "Venda do dia"),
-    # Contagem de inventário: o AJUSTE define o saldo pelo que foi contado
-    # na prateleira, em vez de somar a ele.
-    ("HOR-BANANA-KG", "AJUSTE", 22, None, "Contagem de inventário — perda por maturação"),
-]
+DIAS_DE_HISTORICO = 60
+# Ficam sem compra nas últimas semanas e terminam abaixo do mínimo (RN-06).
+SEM_REPOSICAO_NO_FIM = {"BEB-AGUA-500", "MER-FEIJAO-1KG", "LIM-SABAO-1L"}
+ULTIMA_COMPRA_DOS_SEM_REPOSICAO = 49  # dia do histórico; 0 = o mais antigo
+
+# sku: (compra semanal, venda média por dia, custo unitário da primeira compra)
+PERFIS = {
+    "BEB-COLA-350": (90, 11, "3.10"),
+    "BEB-AGUA-500": (150, 20, "1.10"),
+    "BEB-SUCO-1L": (25, 3, "6.40"),
+    "MER-ARROZ-5KG": (38, 5, "19.80"),
+    "MER-FEIJAO-1KG": (55, 7, "5.70"),
+    "LIM-DETER-500": (40, 5, "1.90"),
+    "LIM-SABAO-1L": (18, 2, "12.30"),
+    "HOR-BANANA-KG": (45, 6, "3.80"),
+}
+
+
+def plano_de_movimentacoes(agora: datetime) -> list[dict]:
+    """Histórico determinístico: compra semanal e venda diária por produto.
+
+    Mesma semente sempre, para o seed dar os mesmos números (e os 3 produtos
+    em ruptura que o roteiro do README espera). As datas são relativas a
+    `agora`, então o dashboard sempre tem dados recentes.
+    """
+    sorteio = random.Random(2026)
+    saldo = {sku: 0 for sku in PERFIS}
+    plano = []
+    for dia in range(DIAS_DE_HISTORICO + 1):
+        base = agora - timedelta(days=DIAS_DE_HISTORICO - dia)
+        for sku, *_ in PRODUTOS:
+            compra, venda, custo = PERFIS[sku]
+            repoe = sku not in SEM_REPOSICAO_NO_FIM or dia <= ULTIMA_COMPRA_DOS_SEM_REPOSICAO
+            if dia % 7 == 0 and repoe:
+                saldo[sku] += compra
+                # O custo sobe 1% por semana: mostra o custo médio (RN-07) mudando.
+                custo_da_semana = (
+                    Decimal(custo) * (1 + Decimal(dia // 7) / 100)
+                ).quantize(Decimal("0.01"))
+                plano.append({
+                    "sku": sku, "tipo": "ENTRADA", "quantidade": compra,
+                    "custo_unitario": custo_da_semana,
+                    "motivo": f"Compra semanal {dia // 7 + 1}",
+                    "criado_em": base - timedelta(hours=10),
+                })
+            # O sorteio acontece mesmo sem saldo: mantém a sequência estável.
+            quantidade = min(sorteio.randint(max(1, venda - 2), venda + 2), saldo[sku])
+            if quantidade > 0:
+                saldo[sku] -= quantidade
+                plano.append({
+                    "sku": sku, "tipo": "SAIDA", "quantidade": quantidade,
+                    "custo_unitario": None, "motivo": "Vendas do dia",
+                    "criado_em": base - timedelta(hours=2),
+                })
+
+    # Contagem de inventário: o AJUSTE define o saldo pelo que foi contado.
+    plano.append({
+        "sku": "HOR-BANANA-KG", "tipo": "AJUSTE",
+        "quantidade": saldo["HOR-BANANA-KG"] - 4, "custo_unitario": None,
+        "motivo": "Contagem de inventário — perda por maturação",
+        "criado_em": agora - timedelta(hours=1),
+    })
+    return plano
 
 
 def _empresa_demo() -> Empresa | None:
-    return Empresa.query.filter(Empresa.cnpj == CNPJ_DEMO).first()
+    """Acha a demo pelo admin: o CNPJ da demo mudou no CP2 (o antigo tinha DV inválido)."""
+    admin = Usuario.query.filter(Usuario.email == EMAIL_ADMIN_DEMO).first()
+    return admin.empresa if admin else None
 
 
 def _apagar(empresa: Empresa) -> None:
@@ -89,6 +138,9 @@ def _apagar(empresa: Empresa) -> None:
     Produto.query.filter(Produto.empresa_id == empresa.id).delete(
         synchronize_session=False
     )
+    RelatorioIA.query.filter(RelatorioIA.empresa_id == empresa.id).delete(
+        synchronize_session=False
+    )
     for modelo in (Categoria, Fornecedor, Usuario):
         modelo.query.filter(modelo.empresa_id == empresa.id).delete(
             synchronize_session=False
@@ -97,14 +149,14 @@ def _apagar(empresa: Empresa) -> None:
     db.session.commit()
 
 
-def povoar() -> None:
+def povoar() -> tuple[Empresa, dict[str, Produto]]:
     empresa = Empresa(nome="Comércio Demonstração", cnpj=CNPJ_DEMO)
     db.session.add(empresa)
     db.session.flush()
 
     admin = Usuario(
         nome="Administrador Demo",
-        email="admin@demo.com",
+        email=EMAIL_ADMIN_DEMO,
         senha_hash=gerar_hash("admin123"),
         role=RoleUsuario.ADMIN,
         empresa_id=empresa.id,
@@ -148,17 +200,18 @@ def povoar() -> None:
         db.session.add(produto)
     db.session.commit()
 
-    for sku, tipo, quantidade, custo, motivo in MOVIMENTACOES:
-        movimentacao_service.registrar(
-            operador,
-            {
-                "produto_id": produtos[sku].id,
-                "tipo": tipo,
-                "quantidade": quantidade,
-                "custo_unitario": Decimal(custo) if custo else None,
-                "motivo": motivo,
-            },
-        )
+    for passo in plano_de_movimentacoes(agora_utc()):
+        autor = operador if passo["tipo"] == "SAIDA" else admin
+        movimentacao = movimentacao_service.registrar(autor, {
+            "produto_id": produtos[passo["sku"]].id,
+            "tipo": passo["tipo"],
+            "quantidade": passo["quantidade"],
+            "custo_unitario": passo["custo_unitario"],
+            "motivo": passo["motivo"],
+        })
+        # A API sempre grava "agora"; só o seed recua a data, para haver histórico.
+        movimentacao.criado_em = passo["criado_em"]
+    db.session.commit()
 
     return empresa, produtos
 
@@ -184,19 +237,20 @@ def main() -> int:
 
         empresa, produtos = povoar()
 
-        from app.services import estoque_service
-
-        apurado = estoque_service.saldos([p.id for p in produtos.values()])
-        em_ruptura = [
-            p for p in produtos.values() if apurado[p.id] < p.estoque_minimo
-        ]
+        em_ruptura = [p for p in produtos.values() if p.saldo_atual < p.estoque_minimo]
+        total_movimentacoes = (
+            Movimentacao.query.join(Produto)
+            .filter(Produto.empresa_id == empresa.id)
+            .count()
+        )
 
         print(f"\nEmpresa: {empresa.nome}")
         print(f"  {len(CATEGORIAS)} categorias, {len(FORNECEDORES)} fornecedores, "
-              f"{len(PRODUTOS)} produtos, {len(MOVIMENTACOES)} movimentações")
+              f"{len(PRODUTOS)} produtos, {total_movimentacoes} movimentações "
+              f"em {DIAS_DE_HISTORICO} dias")
         print(f"  {len(em_ruptura)} produto(s) abaixo do estoque mínimo:")
         for produto in em_ruptura:
-            print(f"    - {produto.sku}: saldo {apurado[produto.id]}, "
+            print(f"    - {produto.sku}: saldo {produto.saldo_atual}, "
                   f"mínimo {produto.estoque_minimo}")
         print("\nUsuários de demonstração:")
         print("  admin@demo.com     / admin123     (ADMIN)")

@@ -100,7 +100,8 @@ DATABASE_URL=postgresql+psycopg://usuario:senha@host:5432/estoque
 
 ### Usuários de demonstração
 
-Criados pelo `seed.py`:
+Criados pelo `seed.py`, que também gera 60 dias de histórico (compras semanais, vendas diárias)
+e deixa três produtos em ruptura:
 
 | Email | Senha | Perfil |
 |---|---|---|

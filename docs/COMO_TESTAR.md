@@ -30,6 +30,7 @@ Banco SQLite em memória, recriado a cada teste; nenhum teste acessa a rede.
 - `http://127.0.0.1:5000/swagger` → rotas agrupadas por recurso
 - `POST /auth/login` com `admin@demo.com` / `admin123` → `access_token`; em **Authorize**, `Bearer <token>`
 - `GET /estoque/alertas` → 3 produtos em ruptura (dados do seed)
+- `GET /dashboard/resumo?dias=30` → série com 30 dias preenchidos
 
 ## 5. Cenários de negócio
 
