@@ -5,6 +5,7 @@ registrar os namespaces duas vezes), banco SQLite em memória recriado a cada
 teste, duas empresas e cabeçalhos de autenticação por papel.
 """
 
+import urllib.request
 from types import SimpleNamespace
 
 import bcrypt
@@ -26,6 +27,10 @@ class ConfigTeste(Config):
     AUTO_MIGRATE = False
     SECRET_KEY = "segredo-de-teste-" + "x" * 32
     JWT_SECRET_KEY = "jwt-de-teste-" + "y" * 32
+    # Sem chave: nenhum teste chama a LLM, a não ser que peça (fixture com_chave).
+    GROQ_API_KEY = ""
+    GROQ_MODEL = "modelo-de-teste"
+    LLM_TIMEOUT_S = 1
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -37,6 +42,14 @@ def _bcrypt_rapido():
             bcrypt, "gensalt", lambda rounds=4, prefix=b"2b": original(rounds, prefix)
         )
         yield
+
+
+@pytest.fixture(autouse=True)
+def _sem_rede(monkeypatch):
+    """Rede de segurança: nenhum teste fala com a internet."""
+    def bloqueado(*args, **kwargs):
+        raise AssertionError("teste tentou acessar a rede")
+    monkeypatch.setattr(urllib.request, "urlopen", bloqueado)
 
 
 @pytest.fixture(scope="session")

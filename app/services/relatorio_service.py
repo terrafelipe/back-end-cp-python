@@ -6,8 +6,10 @@ justificativa. Sem ela, o relatório sai pelas regras abaixo e diz isso no
 campo `origem` (decisões D5 e D6 da SPEC-CP2).
 """
 
+import logging
 from datetime import datetime, timedelta, timezone
 
+from flask import current_app
 from sqlalchemy import func
 
 from app.errors import NaoEncontrado
@@ -16,7 +18,11 @@ from app.models import (
     Categoria, Movimentacao, OrigemRelatorio, Produto, RelatorioIA, TipoMovimentacao,
 )
 from app.services import estoque_service
+from app.services.llm import cliente as cliente_llm
+from app.services.llm import reposicao as prompt_reposicao
 from app.services.paginacao import paginar
+
+logger = logging.getLogger(__name__)
 
 JANELA_CONSUMO_DIAS = 30
 COBERTURA_ALERTA_DIAS = 15
@@ -107,15 +113,43 @@ def _por_regras(itens: list[dict]) -> dict:
     return {"resumo": resumo, "prioridades": prioridades}
 
 
+def _pela_llm(itens: list[dict], regras: dict) -> dict | None:
+    """Tenta a LLM; None em qualquer problema, e o relatório sai pelas regras.
+
+    O `except Exception` é deliberado: um serviço externo fora do ar nunca
+    pode virar erro 500 na tela.
+    """
+    chave = current_app.config.get("GROQ_API_KEY")
+    if not itens or not chave:
+        return None
+    try:
+        bruto = cliente_llm.completar_json(
+            prompt_reposicao.montar_mensagens(itens),
+            modelo=current_app.config["GROQ_MODEL"],
+            chave=chave,
+            timeout_s=current_app.config["LLM_TIMEOUT_S"],
+        )
+    except Exception:  # noqa: BLE001
+        logger.warning("LLM indisponível; relatório gerado pelas regras.", exc_info=True)
+        return None
+    validado = prompt_reposicao.validar_resposta(bruto, regras)
+    if validado is None:
+        logger.warning("Resposta da LLM fora do formato; relatório gerado pelas regras.")
+    return validado
+
+
 def gerar_reposicao(usuario_logado) -> RelatorioIA:
     itens = _candidatos(usuario_logado.empresa_id)
+    regras = _por_regras(itens)
+    pela_llm = _pela_llm(itens, regras)
+
     relatorio = RelatorioIA(
         empresa_id=usuario_logado.empresa_id,
         usuario_id=usuario_logado.id,
-        origem=OrigemRelatorio.REGRAS,
-        modelo=None,
+        origem=OrigemRelatorio.LLM if pela_llm else OrigemRelatorio.REGRAS,
+        modelo=current_app.config["GROQ_MODEL"] if pela_llm else None,
         entrada={"produtos": itens},
-        resultado=_por_regras(itens),
+        resultado=pela_llm or regras,
     )
     db.session.add(relatorio)
     db.session.commit()

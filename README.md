@@ -87,6 +87,9 @@ Todas são opcionais: o projeto roda sem `.env`.
 | `SWAGGER_URL` | Caminho da documentação | `/swagger` |
 | `SQLALCHEMY_ECHO` | Imprime o SQL gerado, útil para depurar | `0` |
 | `CORS_ORIGINS` | Origens aceitas, separadas por vírgula | `*` |
+| `GROQ_API_KEY` | Chave da Groq; sem ela o relatório de reposição usa as regras | vazio |
+| `GROQ_MODEL` | Modelo da Groq | `llama-3.3-70b-versatile` |
+| `LLM_TIMEOUT_S` | Segundos até desistir da LLM e usar as regras | `20` |
 
 Para usar PostgreSQL, basta uma linha no `.env` — nenhum arquivo de modelo,
 serviço ou migration muda:
@@ -387,6 +390,38 @@ Todos os endpoints, exceto `/auth/register` e `/auth/login`, exigem o cabeçalho
 ```
 
 Os campos do JSON seguem `snake_case`. Senhas nunca aparecem em respostas — os modelos de entrada e saída são declarados separadamente.
+
+---
+
+## Relatório de reposição com IA
+
+**Finalidade.** Dizer o que comprar primeiro. O botão "Gerar análise" do dashboard chama
+`POST /relatorios/reposicao`; o resultado fica salvo e `GET /relatorios/reposicao/ultimo` o mostra
+de novo sem nova chamada.
+
+**Modelo.** `llama-3.3-70b-versatile` na Groq (API compatível com a da OpenAI), trocável por
+`GROQ_MODEL`. O cliente fica em `app/services/llm/cliente.py`, atrás de uma função.
+
+**Dados enviados.** Só dos produtos ativos em ruptura ou com até 15 dias de cobertura: nome, SKU,
+categoria, saldo, estoque mínimo, saídas dos últimos 30 dias, custo médio, dias até acabar e a
+quantidade sugerida calculada pelo sistema. Nenhum dado de usuário, e-mail, CNPJ, fornecedor ou
+empresa sai do servidor.
+
+**Resposta.** JSON com `resumo` e `prioridades` (`sku`, `motivo`), validado antes de salvar: SKU
+desconhecido é descartado, SKU esquecido volta ao fim pela ordem das regras, textos têm tamanho
+máximo. Os números (quantidade sugerida) são sempre do sistema — a LLM só ordena e justifica.
+
+**Sem LLM.** Sem `GROQ_API_KEY`, com timeout (`LLM_TIMEOUT_S`) ou resposta inválida, o relatório sai
+pelas regras: ordem por dias até acabar e quantidade = maior entre 2× o mínimo e o consumo de 30 dias,
+menos o saldo. O campo `origem` diz `LLM` ou `REGRAS` e a tela mostra "gerado por IA" ou "gerado
+por regras". Nunca erro 500.
+
+**Limitações.** A justificativa pode ser genérica; a LLM não conhece sazonalidade, preço de
+fornecedor nem prazo de entrega. Cotas gratuitas da Groq podem acabar — o relatório por regras cobre.
+
+**Segurança.** O nome do produto é digitado por usuário e pode conter instruções (prompt injection).
+Ele vai como dado dentro de um JSON, o prompt manda ignorar ordens escritas nos campos, e a saída é
+validada; a LLM não executa nada nem acessa o banco. A chave fica só no `.env`.
 
 ---
 
