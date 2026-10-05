@@ -8,6 +8,8 @@ AJUSTE.
 from datetime import datetime, timezone
 from decimal import Decimal
 
+from sqlalchemy import update
+
 from app.errors import NaoEncontrado, RegraDeNegocio, RequisicaoInvalida
 from app.extensions import db
 from app.models import Movimentacao, Produto, TipoMovimentacao
@@ -28,9 +30,16 @@ def _produto_da_empresa(usuario_logado, produto_id: int, bloquear: bool = False)
         Produto.empresa_id == usuario_logado.empresa_id,
     )
     if bloquear:
-        # SELECT ... FOR UPDATE no Postgres: duas saídas simultâneas não leem o
-        # mesmo saldo. O SQLite ignora (ele já serializa as escritas).
-        consulta = consulta.with_for_update()
+        # Trava a linha antes de ler o saldo: duas saídas simultâneas não podem
+        # ler o mesmo valor. O UPDATE vazio abre a transação de escrita no
+        # SQLite (que ignora FOR UPDATE); no Postgres o FOR UPDATE basta.
+        db.session.execute(
+            update(Produto)
+            .where(Produto.id == produto_id, Produto.empresa_id == usuario_logado.empresa_id)
+            .values(saldo_atual=Produto.saldo_atual)
+            .execution_options(synchronize_session=False)
+        )
+        consulta = consulta.with_for_update().execution_options(populate_existing=True)
     produto = consulta.first()
     if produto is None:
         raise NaoEncontrado("Produto não encontrado.")
