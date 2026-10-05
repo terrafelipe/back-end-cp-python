@@ -100,7 +100,7 @@ Todas são opcionais: o projeto roda sem `.env`.
 | `SQLALCHEMY_ECHO` | Imprime o SQL gerado, útil para depurar | `0` |
 | `CORS_ORIGINS` | Origens aceitas, separadas por vírgula | `*` |
 | `GROQ_API_KEY` | Chave da Groq; sem ela o relatório de reposição usa as regras | vazio |
-| `GROQ_MODEL` | Modelo da Groq | `llama-3.3-70b-versatile` |
+| `GROQ_MODEL` | Modelo da Groq | `openai/gpt-oss-120b` |
 | `LLM_TIMEOUT_S` | Segundos até desistir da LLM e usar as regras | `20` |
 
 Para usar PostgreSQL, basta uma linha no `.env` — nenhum arquivo de modelo,
@@ -429,8 +429,8 @@ Os campos do JSON seguem `snake_case`. Senhas nunca aparecem em respostas — os
 `POST /relatorios/reposicao`; o resultado fica salvo e `GET /relatorios/reposicao/ultimo` o mostra
 de novo sem nova chamada.
 
-**Modelo.** `llama-3.3-70b-versatile` na Groq (API compatível com a da OpenAI), trocável por
-`GROQ_MODEL`. O cliente fica em `app/services/llm/cliente.py`, atrás de uma função.
+**Modelo.** `openai/gpt-oss-120b` na Groq (API compatível com a da OpenAI), trocável por
+`GROQ_MODEL`. O `llama-3.3-70b-versatile` do plano original saiu da Groq em outubro de 2026. O cliente fica em `app/services/llm/cliente.py`, atrás de uma função.
 
 **Dados enviados.** Só dos produtos ativos em ruptura ou com até 15 dias de cobertura: nome, SKU,
 categoria, saldo, estoque mínimo, saídas dos últimos 30 dias, custo médio, dias até acabar e a

@@ -26,7 +26,7 @@ relatorio_saida = api.model("RelatorioReposicao", {
         enum=[origem.value for origem in OrigemRelatorio], example="LLM",
         description="LLM = gerado por IA; REGRAS = gerado pelas regras do sistema",
     ),
-    "modelo": fields.String(example="llama-3.3-70b-versatile"),
+    "modelo": fields.String(example="openai/gpt-oss-120b"),
     "criado_em": DataHoraUTC(),
     "resultado": fields.Nested(resultado),
 })

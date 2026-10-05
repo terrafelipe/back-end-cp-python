@@ -84,7 +84,7 @@ de app, cliente, empresa demo e tokens ADMIN/OPERADOR; `pytest` em `requirements
   (ordem por dias até acabar, quantidade = mínimo × 2 − saldo), nunca erro 500.
 - `GET /relatorios/reposicao/ultimo` e `GET /relatorios/reposicao` (paginado).
 - Nomes de produto vão como dado dentro do JSON, com instrução explícita de ignorar ordens contidas neles.
-- Variáveis novas: `GROQ_API_KEY`, `GROQ_MODEL` (padrão `llama-3.3-70b-versatile`), `LLM_TIMEOUT_S`.
+- Variáveis novas: `GROQ_API_KEY`, `GROQ_MODEL` (padrão `openai/gpt-oss-120b`; o `llama-3.3-70b-versatile` original saiu da Groq em 2026-10-05), `LLM_TIMEOUT_S`.
 
 **B6. Seed** — `seed.py` gera ~60 dias de movimentações com datas passadas (entradas semanais,
 saídas diárias), mantendo 3 produtos em ruptura.

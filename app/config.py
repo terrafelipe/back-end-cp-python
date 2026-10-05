@@ -83,7 +83,8 @@ class Config:
     # --- LLM (relatório de reposição) ----------------------------------
     # Sem chave, o relatório sai pelas regras (origem REGRAS), sem erro.
     GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-    GROQ_MODEL = os.getenv("GROQ_MODEL") or "llama-3.3-70b-versatile"
+    # O llama-3.3-70b-versatile saiu da Groq (model_not_found em 2026-10-05).
+    GROQ_MODEL = os.getenv("GROQ_MODEL") or "openai/gpt-oss-120b"
     LLM_TIMEOUT_S = float(os.getenv("LLM_TIMEOUT_S") or 20)
 
     # --- Servidor local ------------------------------------------------
