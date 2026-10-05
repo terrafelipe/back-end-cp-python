@@ -35,6 +35,18 @@ Projeto acadêmico desenvolvido para a FIAP — Tecnologia em Inteligência Arti
 
 O SQLite foi escolhido por eliminar dependência de servidor externo, mantendo migrations versionadas e integridade referencial. Os modelos usam apenas tipos genéricos do SQLAlchemy, de modo que a migração para PostgreSQL exija apenas a troca da string de conexão.
 
+## Arquitetura
+
+```mermaid
+flowchart LR
+    F[Front React + Vite<br/>front-end-cp-python] -- HTTP + JWT --> C[controllers<br/>flask-restx]
+    C --> S[services<br/>regras RN-xx]
+    S --> M[models<br/>SQLAlchemy] --> DB[(SQLite / Postgres)]
+    S -- relatório de reposição --> L[Groq LLM]
+```
+
+O front consome o contrato de `docs/GRUPO.md`. Toda regra fica em `services/`; o back revalida tudo.
+
 ---
 
 ## Como rodar
@@ -258,6 +270,23 @@ o modelo, a entrada enviada e o resultado, em JSON. Mostrar o último relatório
 **Normalização.** O resto segue na 3FN: `movimentacao` continua sem `empresa_id` (a empresa vem do
 produto) e `saldo_atual` é a única redundância, documentada acima.
 
+### Otimização (CP2)
+
+Medido com `python scripts/benchmark.py` (SQLite temporário, 500 produtos, 20 mil movimentações,
+20 repetições por rota; detalhes em `docs/benchmark-cp2.md`):
+
+| Rota | Antes (mediana) | Depois (mediana) |
+|---|---|---|
+| `/estoque/alertas` | 176,5 ms | 1,6 ms |
+| `/produtos?em_ruptura=true` | 180,4 ms | 1,6 ms |
+| `/produtos` | 40,1 ms | 2,4 ms |
+| `/estoque/saldo` | 37,2 ms | 2,2 ms |
+| `/dashboard/resumo` | — | 26,7 ms |
+
+Três otimizações: (1) cache de saldo, que leva o filtro de ruptura e a paginação para o banco;
+(2) dashboard numa requisição só, com as somas feitas em SQL (`SUM`/`COUNT`/`GROUP BY`);
+(3) índices nas chaves estrangeiras e em `produto(empresa_id, ativo)`.
+
 ---
 
 ## Regras de negócio
@@ -434,6 +463,10 @@ validada; a LLM não executa nada nem acessa o banco. A chave fica só no `.env`
 ```
 
 A suíte usa SQLite em memória, recriado a cada teste, e não acessa a rede (a LLM é simulada).
+São 85 testes: RN-01 a RN-10, isolamento entre empresas (401/403/404), cache de saldo igual ao
+derivado do histórico, migration com backfill, dashboard, relatório por regras e pela LLM
+(sucesso, sem chave, timeout, JSON inválido, SKU inventado, nome com instrução), seed e o
+roteiro de validação abaixo, automatizado.
 
 ---
 
@@ -479,7 +512,7 @@ antes, e faça login como `admin@demo.com` / `admin123`.
 
 ## Escopo
 
-Esta etapa entrega o backend, a documentação e a persistência. Estão previstos para as próximas: interface web e dashboard, aplicação de LLM, testes automatizados, containerização e deploy.
+Esta etapa entrega o backend, a documentação e a persistência. O CP2 entregou dashboard, relatório com LLM, testes automatizados e a revisão do banco; o front está em `front-end-cp-python`. Ficam para depois: containerização e deploy.
 
 Estão deliberadamente **fora do escopo** do produto: emissão de documento fiscal, integração com marketplaces, controle multi-armazém e rastreio por lote ou número de série.
 
