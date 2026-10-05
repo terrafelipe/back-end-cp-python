@@ -463,10 +463,11 @@ validada; a LLM não executa nada nem acessa o banco. A chave fica só no `.env`
 ```
 
 A suíte usa SQLite em memória, recriado a cada teste, e não acessa a rede (a LLM é simulada).
-São 85 testes: RN-01 a RN-10, isolamento entre empresas (401/403/404), cache de saldo igual ao
-derivado do histórico, migration com backfill, dashboard, relatório por regras e pela LLM
-(sucesso, sem chave, timeout, JSON inválido, SKU inventado, nome com instrução), seed e o
-roteiro de validação abaixo, automatizado.
+São 97 testes: RN-01 a RN-10, isolamento entre empresas (401/403/404), cache de saldo igual ao
+derivado do histórico, duas saídas simultâneas (só uma passa), migration com backfill, dashboard,
+relatório por regras e pela LLM (sucesso, sem chave, timeout, JSON inválido, SKU inventado, nome
+com instrução), configuração segura fora do debug e CORS, seed e o roteiro de validação abaixo,
+automatizado.
 
 ---
 

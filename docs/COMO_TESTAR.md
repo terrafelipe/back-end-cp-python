@@ -19,7 +19,7 @@ python -m venv .venv
 ```
 
 Banco SQLite em memória, recriado a cada teste; nenhum teste acessa a rede. Esperado em
-05/10/2026: `88 passed`.
+05/10/2026: `97 passed`.
 
 ## 2. Subir localmente e conferir (~2 min)
 

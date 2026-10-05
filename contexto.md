@@ -100,13 +100,14 @@ Senha com bcrypt, JWT com validade de 8 h, papel checado no servidor, isolamento
 do token. Chaves têm padrão de desenvolvimento em `config.py`: em qualquer ambiente público,
 `SECRET_KEY` e `JWT_SECRET_KEY` precisam vir do ambiente. `.env` está no `.gitignore`; a
 `GROQ_API_KEY` mora só nele. Nome de produto vai à LLM como dado dentro de JSON, com instrução de
-ignorar ordens (prompt injection), e a saída é validada. CORS restrito ao front e limite de
-tentativas de login são as Tasks 7–8 do plano (Issues #4 e #5); o estado atual de `CORS_ORIGINS`
-está em `app/config.py` e na tabela de variáveis do README.
+ignorar ordens (prompt injection), e a saída é validada. Com `FLASK_DEBUG=0` a API não sobe
+com `SECRET_KEY`/`JWT_SECRET_KEY` de exemplo ou curtas, e o CORS aceita por padrão só o front local
+(`http://localhost:5173`, `http://127.0.0.1:5173`); ambos da Task 7 (`443c045`). Limite de
+tentativas de login (429) e validação de e-mail/CNPJ: Tasks 8–9, opcionais (Issues #5 e #6).
 
 ## 10. Testes
 
-pytest, **88 testes** (`pytest --collect-only -q` em 05/10/2026). SQLite em memória recriado a cada
+pytest, **97 testes** (`pytest --collect-only -q` em 05/10/2026). SQLite em memória recriado a cada
 teste; nenhum teste acessa a rede (a Groq é simulada).
 
 | Arquivo | Testes | Cobre |
@@ -114,6 +115,7 @@ teste; nenhum teste acessa a rede (a Groq é simulada).
 | `test_auth_usuarios.py` | 13 | login, registro, papéis, isolamento entre empresas |
 | `test_catalogo_estoque.py` | 22 | RN-01 a RN-10 em produtos, categorias, fornecedores e movimentações |
 | `test_relatorio_llm.py` | 12 | caminho pela LLM: sucesso, sem chave, timeout, JSON inválido, SKU inventado, injeção |
+| `test_config.py` | 9 | API não sobe fora do debug com chave de exemplo ou curta; CORS só para o front local |
 | `test_dashboard.py` | 9 | formato do contrato, isolamento, período, top 5, dia em UTC |
 | `test_relatorio_regras.py` | 9 | relatório por regras e endpoints |
 | `test_leituras_otimizadas.py` | 7 | alertas, ruptura e paginação pelo cache |
